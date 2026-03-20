@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '(git push|gh pr create)'; then echo '⚠️ REMINDER: Run `gh run watch` to monitor CI. Do not proceed until CI is green.'; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

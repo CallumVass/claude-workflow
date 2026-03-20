@@ -1,0 +1,43 @@
+# {{PROJECT_NAME}}
+
+## Tech Stack
+<!-- Fill in your tech stack -->
+
+## Scripts
+- `{{CHECK_CMD}}` — full CI check
+- `{{TEST_CMD}}` — run tests
+- `{{LINT_CMD}}` — lint
+
+## Autonomous Workflow Rules
+
+### Before Committing
+- Always run `{{CHECK_CMD}}` before committing. If it fails, fix and re-run until it passes.
+- Do NOT use `--no-verify` to skip git hooks.
+
+### After Pushing / Creating a PR
+- After every `git push` or `gh pr create`, get the run ID with `gh run list --branch <branch> --limit 1 --json databaseId --jq '.[0].databaseId'` then run `gh run watch <run-id> --exit-status`.
+- If CI fails: read the logs with `gh run view <run-id> --log-failed`, fix the issue, commit, push, and watch CI again.
+- Do not move on to the next task until CI is green.
+
+### Branch Workflow
+- NEVER commit directly to main. Always create a feature branch first.
+- Branch naming: `feat/<short-description>`, `fix/<short-description>`, `chore/<short-description>`.
+- After CI passes on the feature branch, create a PR with `gh pr create`.
+- Do NOT push directly to main. All changes reach main via PR only.
+- Always squash merge PRs: `gh pr merge <number> --squash --delete-branch`.
+- After merging, checkout main and pull: `git checkout main && git pull`.
+
+### Autonomous Issue Implementation
+- When implementing an issue autonomously:
+  - Read the full issue body — it contains all context needed.
+  - Follow TDD strictly: one test -> red -> implement -> green -> repeat.
+  - Derive the behavior list from the issue's Test Plan and Acceptance Criteria — do not ask the user for confirmation.
+  - After all tests pass, run `{{CHECK_CMD}}` before committing.
+  - If `{{CHECK_CMD}}` or tests fail, fix and retry. Do NOT skip or weaken tests.
+  - Do NOT modify or delete tests from previous issues to make yours pass. If they conflict, stop and report the conflict.
+  - Do NOT change public interfaces established by previous issues unless the current issue explicitly requires it.
+
+### Regression Prevention
+- Before starting work on any issue, run `{{TEST_CMD}}` and record the count of passing tests.
+- After your implementation, the passing test count must be >= the starting count.
+- NEVER delete or modify existing test files unless the current issue explicitly requires changing that behavior.
