@@ -37,12 +37,17 @@ trap cleanup INT TERM EXIT
 
 # Pull main, auto-removing untracked files that conflict with incoming merge
 safe_pull() {
-  if ! PULL_OUT=$(git pull --ff-only 2>&1); then
+  # Stash any dirty state left by agents before pulling
+  if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null; then
+    warn "Stashing uncommitted changes before pull"
+    git stash --include-untracked -q
+  fi
+  if ! PULL_OUT=$(git pull --rebase 2>&1); then
     CONFLICTING=$(echo "$PULL_OUT" | sed -n 's/^\t\+//p')
     if [ -n "$CONFLICTING" ] && echo "$PULL_OUT" | grep -q "untracked working tree files would be overwritten"; then
       warn "Removing untracked files that conflict with incoming merge:"
       echo "$CONFLICTING" | while read -r f; do warn "  $f"; rm -f "$f"; done
-      git pull --ff-only
+      git pull --rebase
     else
       err "git pull failed: $PULL_OUT"; return 1
     fi
