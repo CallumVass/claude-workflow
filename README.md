@@ -97,7 +97,17 @@ LLM-based reviews are non-deterministic — the same diff can surface different 
 
 These rules constrain the reviewer to check specific invariants rather than freestyle, making results more repeatable across runs. The generic checklist (Logic, Security, Error Handling, Performance, Test Quality) in the `code-review` skill still applies alongside your project rules.
 
-### 5. `cw design-ui` — UI Design
+### 5. `cw evolve` — Pipeline Retrospective
+
+Analyzes pipeline run history — failure reports, merged PRs, review findings, CI logs, and LEARNINGS.md — to identify recurring patterns. Generates concrete patches to agent/skill/template files and opens a PR against claude-workflow for review.
+
+```bash
+cw evolve    # run from any project that has pipeline data (failures/, merged PRs, etc.)
+```
+
+Requires at least one data source: `failures/issue-*.md`, `LEARNINGS.md`, merged PRs, or failed CI runs. Every proposed change needs 2+ independent data points — one failure is an anecdote, two is a pattern.
+
+### 6. `cw design-ui` — UI Design
 
 Analyzes the app's domain, designs a complete UI/UX system, writes it to frontend-conventions, then implements the requested component.
 
@@ -119,6 +129,7 @@ cw design-ui                   # read from DESIGN_BRIEF.md
 | `cw implement` | Autonomous implementation pipeline |
 | `cw review <PR#>` | Code review (reviewer → judge) |
 | `cw design-ui <target>` | UI design system + implementation |
+| `cw evolve` | Pipeline retrospective → agent/skill improvements (PR) |
 
 ## Individual Agents
 
@@ -147,6 +158,7 @@ scripts/
   prd-qa.sh             — multi-agent PRD refinement
   review.sh             — standalone code review (reviewer + judge)
   design-ui.sh          — UI design system + component builder
+  evolve.sh             — pipeline retrospective (analyze failures → patch agents)
   lib.sh                — shared utilities (run_agent, check_signal, extract_text)
   stream-filter.jq            — Claude stream output formatter
   stream-filter-opencode.jq   — OpenCode stream output formatter
@@ -173,6 +185,7 @@ agents/
 
   # Standalone agents
   synthesizer.md        — post-merge learnings distiller
+  retrospective.md      — pipeline retrospective analyzer
   single-issue-creator.md — interactive QA → single issue
   frontend-designer.md  — production-grade UI builder
 
@@ -184,6 +197,7 @@ skills/
   opensrc/              — fetch library source code for any language
   frontend-design/      — distinctive UI design guidelines
   frontend-conventions/ — project-specific design tokens template
+  retrospective/        — pipeline retrospective analysis patterns + output format
 
 templates/
   CLAUDE.md.global      — user-level agent instructions (TDD, vertical slicing)

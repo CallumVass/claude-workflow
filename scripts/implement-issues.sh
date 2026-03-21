@@ -37,12 +37,12 @@ trap cleanup INT TERM EXIT
 
 # Pull main, auto-removing untracked files that conflict with incoming merge
 safe_pull() {
-  if ! PULL_OUT=$(git pull 2>&1); then
+  if ! PULL_OUT=$(git pull --ff-only 2>&1); then
     CONFLICTING=$(echo "$PULL_OUT" | sed -n 's/^\t\+//p')
     if [ -n "$CONFLICTING" ] && echo "$PULL_OUT" | grep -q "untracked working tree files would be overwritten"; then
       warn "Removing untracked files that conflict with incoming merge:"
       echo "$CONFLICTING" | while read -r f; do warn "  $f"; rm -f "$f"; done
-      git pull
+      git pull --ff-only
     else
       err "git pull failed: $PULL_OUT"; return 1
     fi
@@ -156,7 +156,8 @@ CONSTRAINTS:
 - Do NOT modify or delete tests from previous issues.
 - Do NOT change public interfaces from previous issues unless this issue requires it.
 - Do NOT merge the PR. Only create it — merging is handled externally.
-- If you encounter a conflict with previous work that you cannot resolve, create the PR as draft and output exactly: $HALT_FLAG"
+- If you encounter a conflict with previous work that you cannot resolve, create the PR as draft and output exactly: $HALT_FLAG
+- IMPORTANT: If the planner surfaces unresolved questions, resolve them yourself using reasonable defaults and proceed. Do NOT stop and wait — there is no human in the loop. Use your best judgment based on the issue context and codebase."
 
       TMPFILE=$(run_agent "implementation-orchestrator" "$ORCH_PROMPT")
       if check_signal "$TMPFILE" "$HALT_FLAG"; then
@@ -179,6 +180,7 @@ CONSTRAINTS:
     fi
 
     # --- CI check with ci-fix-orchestrator ---
+    RUN_ID=""
     progress "#$issue_num — PR #$PR_NUM created, watching CI"
     git checkout "$branch" 2>/dev/null || true
 
@@ -207,6 +209,9 @@ ${CI_LOGS:-(logs unavailable)}
     fi
 
     rm -f "$CI_TMPFILE"
+
+    # Capture the passing CI run ID so we can detect new runs after review fixes
+    RUN_ID=$(gh run list --branch "$branch" --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || echo "")
 
     progress "#$issue_num — CI passed, reviewing"
 
@@ -257,18 +262,34 @@ $FINDINGS"
       exit 1
     fi
 
-    # Re-verify CI after review fixes
-    LATEST_RUN_ID=$(gh run list --branch "$branch" --limit 1 --json databaseId --jq '.[0].databaseId')
+    # Re-verify CI after review fixes — if a new run appeared and it fails, try to fix it
+    LATEST_RUN_ID=$(gh run list --branch "$branch" --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || echo "")
     if [ -n "$LATEST_RUN_ID" ] && [ "$LATEST_RUN_ID" != "$RUN_ID" ]; then
-      if ! gh run watch "$LATEST_RUN_ID" --exit-status; then
-        CI_LOGS=$(gh run view "$LATEST_RUN_ID" --log-failed 2>/dev/null | tail -100 || echo "(logs unavailable)")
-        capture_failure "$issue_num" "$branch" "ci-failed-after-review-fixes" \
-          "## CI Logs (last 100 lines)
+      if ! gh run watch "$LATEST_RUN_ID" --exit-status 2>/dev/null; then
+        progress "#$issue_num — CI failed after review fixes, attempting repair"
+        POST_REVIEW_CI_PROMPT="Fix CI failures on branch $branch for issue #$issue_num: $issue_title.
+
+Issue context:
+$issue_body
+
+Max retries: $CI_FIX_RETRIES"
+        POST_CI_TMPFILE=$(run_agent "ci-fix-orchestrator" "$POST_REVIEW_CI_PROMPT")
+
+        if check_signal "$POST_CI_TMPFILE" "$HALT_FLAG"; then
+          progress "${S_FAIL} #$issue_num — CI failed after review fixes (repair failed)"
+          POST_RUN_ID=$(extract_halt_field "$POST_CI_TMPFILE" "RUN_ID")
+          CI_LOGS=""
+          [ -n "$POST_RUN_ID" ] && CI_LOGS=$(gh run view "$POST_RUN_ID" --log-failed 2>/dev/null | tail -100 || echo "(logs unavailable)")
+          capture_failure "$issue_num" "$branch" "ci-failed-after-review-fixes" \
+            "## CI Logs (last 100 lines)
 \`\`\`
-$CI_LOGS
+${CI_LOGS:-(logs unavailable)}
 \`\`\`"
-        echo "failure ci-failed-after-review-fixes" > "$status_file"
-        exit 1
+          rm -f "$POST_CI_TMPFILE"
+          echo "failure ci-failed-after-review-fixes" > "$status_file"
+          exit 1
+        fi
+        rm -f "$POST_CI_TMPFILE"
       fi
     fi
 

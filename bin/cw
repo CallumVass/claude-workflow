@@ -46,6 +46,9 @@ Commands:
   design-ui <target>      Analyze app → design system → implement UI component.
     design-ui              Reads from DESIGN_BRIEF.md if no argument.
 
+  evolve                  Pipeline retrospective: analyze failures + PRs → improve agents.
+                          Creates a PR against claude-workflow with patches.
+
   init                    Bootstrap current project (.claude/CLAUDE.md + hooks.json).
   sync                    Update ~/.claude (+ opencode if installed).
   setup                   Install 'cw' to ~/.local/bin (run once per machine).
@@ -70,9 +73,9 @@ Orchestrators (use as your agent in Claude Code / opencode):
   ci-fix-orchestrator            Diagnose → fix → verify CI
 
 Agents (usable standalone via: claude --agent <name>):
-  planner, implementor, synthesizer, code-reviewer, review-judge,
-  ci-fixer, issue-creator, single-issue-creator, prd-integrator,
-  prd-critic, prd-architect, frontend-designer
+  planner, implementor, synthesizer, retrospective, code-reviewer,
+  review-judge, ci-fixer, issue-creator, single-issue-creator,
+  prd-integrator, prd-critic, prd-architect, frontend-designer
 
 All commands run in the current working directory.
 Requires: claude or opencode (based on CW_BACKEND), gh (GitHub CLI), jq
@@ -105,7 +108,7 @@ check_placeholders() {
 
 # Agents invoked directly by scripts (top-level in opencode).
 # All others are subagent-only.
-TOPLEVEL_AGENTS="frontend-designer single-issue-creator issue-creation-orchestrator prd-orchestrator review-orchestrator implementation-orchestrator ci-fix-orchestrator implementor synthesizer"
+TOPLEVEL_AGENTS="frontend-designer single-issue-creator issue-creation-orchestrator prd-orchestrator review-orchestrator implementation-orchestrator ci-fix-orchestrator implementor synthesizer retrospective"
 
 # Convert a Claude agent .md to OpenCode format.
 # Strips name/skills/tools from frontmatter, sets mode based on top-level list.
@@ -324,6 +327,11 @@ case "$1" in
     check_prerequisites
     shift
     exec "$SCRIPTS_DIR/design-ui.sh" "$@"
+    ;;
+  evolve)
+    check_prerequisites
+    shift
+    exec "$SCRIPTS_DIR/evolve.sh" "$@"
     ;;
   *)
     echo "${_Y}✗${_R} Unknown command: $1" >&2
