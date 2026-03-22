@@ -61,6 +61,10 @@ Your training data may be outdated for libraries that evolve quickly. Do not ass
 - When uncertain about how a library works internally, use `opensrc` to fetch and read its source (e.g., `npx opensrc <package>` or `npx opensrc owner/repo`).
 - Never guess at an API that the issue explicitly flags as different from what you might expect.
 
+## UI Implementation (Stitch)
+
+If `DESIGN.md` exists in the project root, load the `stitch` skill (run `/stitch`) and follow its workflow for all UI work.
+
 ## Before Committing
 
 - Run the full check suite (tests, lint, typecheck).

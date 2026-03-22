@@ -27,9 +27,10 @@ You do NOT write code. You do NOT create or modify files. You only output a plan
    - The issue warns against using a particular syntax or API pattern
 
    Your training data may be outdated for rapidly-evolving libraries. When in doubt, search. For version-specific cases, fetch the library's README or migration guide. Include concrete API patterns and examples in Library Notes — the implementor will rely on them.
-5. **Identify behaviors**: Break acceptance criteria into the smallest testable behaviors.
-6. **Sequence by dependency**: Order behaviors so foundational ones come first. Later tests can build on earlier ones.
-7. **Output the plan**.
+5. **Check DESIGN.md**: If `DESIGN.md` exists, load the `stitch` skill (run `/stitch`) and follow its workflow. Discover available screens, map them to components this issue touches, and note missing ones in the plan.
+6. **Identify behaviors**: Break acceptance criteria into the smallest testable behaviors.
+7. **Sequence by dependency**: Order behaviors so foundational ones come first. Later tests can build on earlier ones.
+8. **Output the plan**.
 
 ## Output Format
 
@@ -53,6 +54,11 @@ You do NOT write code. You do NOT create or modify files. You only output a plan
 
 N. <one-line behavior crossing a system boundary>
    `path/to/test/file.integration.test.ts`
+
+### Design Reference (if DESIGN.md exists)
+Stitch project: `<project-id>`
+- <screen name> → screen ID `<id>` → `path/to/component`
+- MISSING: <component description> → implementor should generate via Stitch
 
 ### Library Notes
 - <key API patterns, version-specific syntax, or gotchas for deps referenced by the issue — required whenever research was done, omit only if no research was needed>
