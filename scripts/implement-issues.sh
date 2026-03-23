@@ -186,62 +186,44 @@ CONSTRAINTS:
       fi
     fi
 
-    # --- CI check with ci-fix-orchestrator ---
-    RUN_ID=""
-    progress "#$issue_num — PR #$PR_NUM created, watching CI"
+    # --- CI + code review in parallel ---
+    progress "#$issue_num — PR #$PR_NUM created, CI + review in parallel"
     git checkout "$branch" 2>/dev/null || true
 
-    CI_FIX_PROMPT="Fix CI failures on branch $branch for issue #$issue_num: $issue_title.
+    # Start CI watch in background
+    CI_STATUS_FILE="/tmp/cw-ci-status-$issue_num"
+    rm -f "$CI_STATUS_FILE"
+    (
+      CI_FIX_PROMPT="Fix CI failures on branch $branch for issue #$issue_num: $issue_title.
 
 Issue context:
 $issue_body
 
 Max retries: $CI_FIX_RETRIES"
 
-    CI_TMPFILE=$(run_agent "ci-fix-orchestrator" "$CI_FIX_PROMPT")
+      CI_TMPFILE=$(run_agent "ci-fix-orchestrator" "$CI_FIX_PROMPT")
 
-    if check_signal "$CI_TMPFILE" "$HALT_FLAG"; then
-      progress "${S_FAIL} #$issue_num — CI failed after $CI_FIX_RETRIES attempts"
-      RUN_ID=$(extract_halt_field "$CI_TMPFILE" "RUN_ID")
-      CI_LOGS=""
-      [ -n "$RUN_ID" ] && CI_LOGS=$(gh run view "$RUN_ID" --log-failed 2>/dev/null | tail -100 || echo "(logs unavailable)")
-      capture_failure "$issue_num" "$branch" "ci-failed-after-$CI_FIX_RETRIES-attempts" \
-        "## CI Logs (last 100 lines)
-\`\`\`
-${CI_LOGS:-(logs unavailable)}
-\`\`\`"
+      if check_signal "$CI_TMPFILE" "$HALT_FLAG"; then
+        RUN_ID=$(extract_halt_field "$CI_TMPFILE" "RUN_ID")
+        echo "failure $RUN_ID" > "$CI_STATUS_FILE"
+      else
+        RUN_ID=$(gh run list --branch "$branch" --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || echo "")
+        echo "success $RUN_ID" > "$CI_STATUS_FILE"
+      fi
       rm -f "$CI_TMPFILE"
-      echo "failure ci-failed-after-$CI_FIX_RETRIES-attempts" > "$status_file"
-      exit 1
-    fi
+    ) &
+    CI_PID=$!
 
-    rm -f "$CI_TMPFILE"
-
-    # Capture the passing CI run ID so we can detect new runs after review fixes
-    RUN_ID=$(gh run list --branch "$branch" --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || echo "")
-
-    progress "#$issue_num — CI passed, reviewing"
-
-    # --- Code review with fix loop ---
+    # Start first review cycle immediately (doesn't depend on CI)
     review_passed=false
     FINDINGS=""
 
-    for review_cycle in $(seq 1 "$REVIEW_MAX_CYCLES"); do
-      progress "#$issue_num — review cycle $review_cycle/$REVIEW_MAX_CYCLES"
+    progress "#$issue_num — review cycle 1/$REVIEW_MAX_CYCLES"
+    FINDINGS=$("$SCRIPT_DIR/review.sh" "$PR_NUM" --skip-checks) && review_passed=true
 
-      if [ "$review_cycle" -eq 1 ]; then
-        FINDINGS=$("$SCRIPT_DIR/review.sh" "$PR_NUM" --skip-checks) && review_passed=true && break
-      else
-        FIX_DIFF=$(git diff HEAD~1)
-        SCOPED_DIFF="SCOPED RE-REVIEW. Only check: were original issues fixed? Did fixes introduce new bugs?
-
-Original findings:
-$FINDINGS
-
-Fix diff:
-$FIX_DIFF"
-        FINDINGS=$("$SCRIPT_DIR/review.sh" --diff "$SCOPED_DIFF" --context "scoped re-review") && review_passed=true && break
-      fi
+    if [ "$review_passed" = false ]; then
+      # Only critical findings require re-review; major/minor/nit are fix-and-go
+      has_critical=$(echo "$FINDINGS" | grep -ci "severity.*critical" || true)
 
       progress "#$issue_num — fixing review findings"
       git checkout "$branch" 2>/dev/null || true
@@ -257,9 +239,46 @@ RULES:
 
       FIX_TMPFILE=$(run_agent "implementor" "$FIX_PROMPT")
       rm -f "$FIX_TMPFILE"
-    done
+
+      if [ "$has_critical" -eq 0 ]; then
+        # No critical findings — trust the fix, skip re-review
+        progress "#$issue_num — no critical findings, skipping re-review"
+        review_passed=true
+      else
+        # Critical findings — re-review required
+        for review_cycle in $(seq 2 "$REVIEW_MAX_CYCLES"); do
+          progress "#$issue_num — review cycle $review_cycle/$REVIEW_MAX_CYCLES"
+          FIX_DIFF=$(git diff HEAD~1)
+          SCOPED_DIFF="SCOPED RE-REVIEW. Only check: were original issues fixed? Did fixes introduce new bugs?
+
+Original findings:
+$FINDINGS
+
+Fix diff:
+$FIX_DIFF"
+          FINDINGS=$("$SCRIPT_DIR/review.sh" --diff "$SCOPED_DIFF" --context "scoped re-review") && review_passed=true && break
+
+          progress "#$issue_num — fixing review findings"
+          git checkout "$branch" 2>/dev/null || true
+
+          FIX_PROMPT="You are on branch $branch. Fix the following code review findings:
+
+$FINDINGS
+
+RULES:
+- Fix only the cited issues. Do not refactor or improve unrelated code.
+- Run \`$CHECK_CMD\` after fixes.
+- Commit and push the fixes."
+
+          FIX_TMPFILE=$(run_agent "implementor" "$FIX_PROMPT")
+          rm -f "$FIX_TMPFILE"
+        done
+      fi
+    fi
 
     if [ "$review_passed" = false ]; then
+      wait "$CI_PID" 2>/dev/null || true
+      rm -f "$CI_STATUS_FILE"
       progress "${S_FAIL} #$issue_num — review not resolved after $REVIEW_MAX_CYCLES cycles"
       capture_failure "$issue_num" "$branch" "review-not-resolved-after-$REVIEW_MAX_CYCLES-cycles" \
         "## Unresolved Findings
@@ -268,6 +287,29 @@ $FINDINGS"
       echo "failure review-not-resolved-after-$REVIEW_MAX_CYCLES-cycles" > "$status_file"
       exit 1
     fi
+
+    # Wait for CI to finish (may already be done)
+    wait "$CI_PID" 2>/dev/null || true
+
+    if [ ! -f "$CI_STATUS_FILE" ] || grep -q "^failure" "$CI_STATUS_FILE"; then
+      RUN_ID=$(awk '{print $2}' "$CI_STATUS_FILE" 2>/dev/null || echo "")
+      progress "${S_FAIL} #$issue_num — CI failed after $CI_FIX_RETRIES attempts"
+      CI_LOGS=""
+      [ -n "$RUN_ID" ] && CI_LOGS=$(gh run view "$RUN_ID" --log-failed 2>/dev/null | tail -100 || echo "(logs unavailable)")
+      capture_failure "$issue_num" "$branch" "ci-failed-after-$CI_FIX_RETRIES-attempts" \
+        "## CI Logs (last 100 lines)
+\`\`\`
+${CI_LOGS:-(logs unavailable)}
+\`\`\`"
+      rm -f "$CI_STATUS_FILE"
+      echo "failure ci-failed-after-$CI_FIX_RETRIES-attempts" > "$status_file"
+      exit 1
+    fi
+
+    RUN_ID=$(awk '{print $2}' "$CI_STATUS_FILE" 2>/dev/null || echo "")
+    rm -f "$CI_STATUS_FILE"
+
+    progress "#$issue_num — CI + review passed"
 
     # Re-verify CI after review fixes — if a new run appeared and it fails, try to fix it
     LATEST_RUN_ID=$(gh run list --branch "$branch" --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || echo "")

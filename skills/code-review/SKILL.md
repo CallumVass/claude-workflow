@@ -61,6 +61,20 @@ Rate each finding 0-100:
 
 **Threshold: only report findings with confidence >= 85.**
 
+## Severity Levels
+
+Rate each finding:
+
+- **critical**: Will cause a bug, security vulnerability, data loss, or crash in production. Must be fixed and re-reviewed before merge.
+- **major**: Significant logic error, missing error handling that will affect users, or performance issue under normal load. Must be fixed but re-review is optional.
+- **minor**: Code quality issue, edge case gap, suboptimal pattern, or test improvement. Fix and merge without re-review.
+- **nit**: Style preference, naming suggestion, or trivial improvement. Fix at author's discretion — does not block merge.
+
+Guidelines:
+- Security findings are always `critical`.
+- Test Quality findings are `minor` unless they mask a real bug.
+- Only `critical` findings require a re-review cycle after fixing.
+
 ## FINDINGS Output Format
 
 ```markdown
@@ -68,6 +82,7 @@ Rate each finding 0-100:
 
 ### Finding 1
 - **Confidence**: [85-100]
+- **Severity**: [critical | low]
 - **Category**: [Logic | Security | Error Handling | Performance | Test Quality]
 - **File**: path/to/file.ts:42
 - **Code**: `the problematic code`
