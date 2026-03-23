@@ -16,7 +16,7 @@ Title: <short descriptive title>
 
 Body:
 ## Context
-<Provide enough detail that an agent can implement without reading any external docs. Be generous — include full protocol details, message formats, edge cases, and technical reference sections that apply.>
+<Provide enough detail for an agent to implement THIS slice. Include: user-observable behavior, relevant data model (conceptual), API contracts, technology choices, edge cases. Do NOT include: type definitions, internal state shapes, config blocks, file layout, or framework-specific patterns. Keep under ~60 lines.>
 
 ## Acceptance Criteria
 <Bulleted checklist describing what the USER sees/experiences. Not implementation details.>
@@ -43,6 +43,6 @@ Body:
 
 ## Rules
 
-- The Context section is CRITICAL. Include full relevant detail inline — do NOT say "see PRD.md" or "see the codebase". The agent implementing the issue should have everything it needs in the issue body itself.
+- The Context section is CRITICAL — the agent works from this alone. Include behavioral requirements, data model concepts, API contracts, and edge cases inline. Do NOT say "see PRD.md". But also do NOT paste raw PRD sections — extract and distill only what THIS slice needs.
 - Acceptance criteria must describe user-observable behavior, not code structure.
 - Each vertical slice must cross all necessary layers to deliver a working flow.

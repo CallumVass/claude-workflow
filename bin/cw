@@ -60,7 +60,7 @@ Environment variables:
   INSTALL_CMD       Dependency install   (default: pnpm install --frozen-lockfile)
   CI_FIX_RETRIES    CI fix attempts      (default: 2)
   REVIEW_MAX_CYCLES Review→fix cycles    (default: 2)
-  MAX_PARALLEL      Concurrent issues    (default: 3)
+  MAX_PARALLEL      Concurrent issues    (default: 1)
 
 Orchestrators (use as your agent in Claude Code / opencode):
   implementation-orchestrator    Plan → implement (TDD)

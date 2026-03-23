@@ -22,8 +22,8 @@ A PRD is ready for implementation when it satisfies ALL of the following:
 ### 3. Functional Requirements
 - Detailed enough that a developer can implement without further clarification
 - Covers inputs, outputs, and transformations for each feature
-- API contracts (endpoints, request/response shapes) where applicable
-- Data model (entities, relationships, constraints) where applicable
+- API contracts as prose: "POST /api/rooms creates a room and returns a room code" — NOT code blocks with language-specific type definitions
+- Data model as concepts: "a room tracks voters, their votes, and the current poll" — NOT language-level interface/type definitions
 
 ### 4. Non-Functional Requirements
 - Performance expectations (latency, throughput)
@@ -46,9 +46,18 @@ A PRD is ready for implementation when it satisfies ALL of the following:
 - No requirement depends on a fully-built layer that doesn't yet exist
 
 ### 8. Implementation Clarity
-- Enough technical detail that a developer can start without asking questions
-- Technology choices specified where they matter
-- Key library/dependency choices include brief rationale (not just named)
-- When a dependency targets a specific version or API generation, the PRD includes enough detail for an implementor to install and use the correct version (e.g., install command, version tag, dist-tag, or link to migration guide)
-- If the required API differs from the library's stable/well-known version, the PRD calls out what changed and what NOT to use
+- Enough technical detail to know WHAT to build and which technologies to use — not HOW to structure code
+- Technology choices specified where they matter, with brief rationale
+- Key library/dependency choices include version or API generation details when the default/latest differs from what's needed
 - Integration points with existing systems documented
+- Do NOT include: language-level type/interface definitions, internal state shapes or class hierarchies, file/directory layout prescriptions, framework-specific implementation patterns (hook usage, middleware chains, alarm mechanics), exact config file contents from tool-specific config files, or specific hex colors/pixel values
+
+### 9. Specification Minimalism
+- PRD describes behavior (what the system does), not implementation (how code is structured)
+- ZERO code blocks allowed in the PRD. No language-specific code, structured config dumps, or pseudocode. All requirements expressed as prose
+- "Swap test": if a detail would change when swapping to an equivalent library/framework but the behavior stays the same, it's implementation detail — remove it
+- Technology choices name the tool and justify why — they do not prescribe usage patterns
+- Data models describe entities and relationships conceptually, not as language-level types
+- API contracts define endpoints and response descriptions in prose, not code blocks with type definitions
+- Target ~150-200 lines for the entire PRD. If longer, it almost certainly contains implementation detail masquerading as requirements
+- A PRD with complete behavioral requirements at 150 lines is BETTER than one with implementation detail at 300 lines

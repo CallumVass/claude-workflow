@@ -19,7 +19,7 @@ INSTALL_CMD="${INSTALL_CMD:-pnpm install --frozen-lockfile}"
 DEFAULT_RETRIES="${DEFAULT_RETRIES:-3}"
 CI_FIX_RETRIES="${CI_FIX_RETRIES:-$DEFAULT_RETRIES}"
 REVIEW_MAX_CYCLES="${REVIEW_MAX_CYCLES:-5}"
-MAX_PARALLEL="${MAX_PARALLEL:-3}"
+MAX_PARALLEL="${MAX_PARALLEL:-1}"
 MERGE_RETRIES="${MERGE_RETRIES:-$DEFAULT_RETRIES}"
 
 cleanup() {
@@ -376,6 +376,11 @@ Keep it under 50 lines. Organize by topic. Only include non-obvious things."
     PIDS=()
     for NUM in "${BATCH[@]}"; do
       WT="/tmp/cw-worktree-$NUM"
+      # Clean up stale worktree from previous run if it exists
+      if [ -d "$WT" ]; then
+        git worktree remove --force "$WT" 2>/dev/null || rm -rf "$WT"
+        git worktree prune 2>/dev/null
+      fi
       git worktree add --detach "$WT" main 2>/dev/null
       # Copy non-git config (.claude settings) if present
       [ -d ".claude" ] && cp -r .claude "$WT/.claude" 2>/dev/null || true

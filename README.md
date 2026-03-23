@@ -214,7 +214,7 @@ Environment variables for `cw implement`:
 | `INSTALL_CMD` | `pnpm install --frozen-lockfile` | Dependency install command |
 | `CI_FIX_RETRIES` | `2` | Max ci-fixer attempts per CI failure |
 | `REVIEW_MAX_CYCLES` | `2` | Max review→fix cycles before halt |
-| `MAX_PARALLEL` | `3` | Max concurrent issue implementations (via git worktrees) |
+| `MAX_PARALLEL` | `1` | Max concurrent issue implementations (via git worktrees) |
 | `CW_BACKEND` | `claude` | Agent backend: `claude` or `opencode` |
 | `CW_MODEL` | *(default)* | Override model ID for agent invocations |
 | `NO_COLOR` | *(unset)* | Disable colored output ([no-color.org](https://no-color.org)) |

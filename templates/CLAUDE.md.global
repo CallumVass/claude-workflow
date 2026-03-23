@@ -11,12 +11,14 @@
 
 # Testing & TDD Workflow (Red-Green-Refactor)
 - Always use strict Test-Driven Development (Red-Green-Refactor) when implementing features.
-- Execute an incremental loop for behaviors: 
+- Execute an incremental loop for behaviors:
   1. Write ONE failing test.
   2. Confirm the test fails (Red).
   3. Write the minimal implementation code needed to make it pass.
   4. Confirm the test passes (Green).
-- *CRITICAL:* Only do ONE test at a time. Do NOT write multiple tests at once or try to one-shot a massive implementation.
+- ONE test at a time for **behavior tests** (user-observable flows). Do NOT one-shot a massive implementation.
+- **Validation/guard tests** (input boundary checks, error codes) may be grouped: write 2-4 related tests together, then implement. These test the same code path with different inputs — one red-green cycle per group, not per case. Use the project's parameterized or table-driven test support when testing the same function with multiple inputs.
+- Target ~10-15 tests per issue. If you're writing 25+, you're over-testing — group guards, skip trivial variations, focus on behaviors.
 - After all tests for a phase/feature pass, look for and execute refactoring candidates to clean up the code.
 
 # Integration & Boundary Testing

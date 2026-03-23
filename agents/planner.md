@@ -20,7 +20,7 @@ You do NOT write code. You do NOT create or modify files. You only output a plan
 
 1. **Read the issue**: Extract acceptance criteria and any test plan from the issue.
 2. **Read LEARNINGS.md**: If `LEARNINGS.md` exists in the project root, read it for conventions, patterns, and lessons from previous issues.
-3. **Explore the codebase**: Understand the current state — existing tests, modules, file structure, naming patterns. Focus on areas the issue touches.
+3. **Explore the codebase**: Understand the current state — existing tests, modules, file structure, naming patterns. Focus on areas the issue touches. **Pay special attention to existing test files** — note any shared helpers, factory functions, or `beforeEach` setup patterns the implementor should reuse.
 4. **Research dependencies**: Search the web for docs/README when:
    - The issue references libraries not already in the codebase
    - The issue mentions a specific version, beta, or API generation (e.g., "v2 API", "beta")
@@ -60,6 +60,9 @@ Stitch project: `<project-id>`
 - <screen name> → screen ID `<id>` → `path/to/component`
 - MISSING: <component description> → implementor should generate via Stitch
 
+### Existing Test Helpers
+- <list any shared setup functions, factory helpers, or beforeEach patterns in existing test files that the implementor MUST reuse — e.g., "createRoomWithVoters() in poll-room.test.ts sets up a DO with N connected voters", "renderWithRouter() in test-utils.tsx wraps components in router context". If none exist yet, note what helpers SHOULD be extracted during the refactor step.>
+
 ### Library Notes
 - <key API patterns, version-specific syntax, or gotchas for deps referenced by the issue — required whenever research was done, omit only if no research was needed>
 
@@ -69,9 +72,11 @@ Stitch project: `<project-id>`
 
 ## Rules
 
-- **One behavior per test case**. Each entry = one red-green cycle for the implementor.
-- **Dependency order**. If test 3 requires the code from test 1, test 1 comes first.
-- **Use existing test file conventions**. Match the project's test file naming and location patterns.
-- **Integration tests last**. Unit behaviors first, then integration tests that verify cross-boundary flows.
-- **Concise**. The implementor will figure out assertions and test code — just name the behavior and the file.
-- **No code**. Do not write test code, implementation code, or pseudocode.
+- **Target 8-15 test cases per issue.** If you're listing 20+, you're over-testing — group related checks and drop trivial variations.
+- **Behavior tests get one entry each.** A behavior = a user-observable flow (e.g., "host creates poll and sees room code"). One red-green cycle.
+- **Validation/guard tests get grouped.** Input boundary checks on the same function (e.g., "rejects empty question, too-long question, too few options, too many options") = ONE entry labeled "validation: <function/endpoint>". The implementor writes these as parameterized tests in a single cycle.
+- **Dependency order.** If test 3 requires the code from test 1, test 1 comes first.
+- **Use existing test file conventions.** Match the project's test file naming and location patterns.
+- **Integration tests last.** Unit behaviors first, then integration tests that verify cross-boundary flows.
+- **Concise.** The implementor will figure out assertions and test code — just name the behavior and the file.
+- **No code.** Do not write test code, implementation code, or pseudocode.
