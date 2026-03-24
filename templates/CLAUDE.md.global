@@ -9,26 +9,8 @@
 - Make these unresolved questions extremely concise.
 - If a task is large, automatically structure the plan as a "multi-phase plan" broken down into sequential implementation steps.
 
-# Testing & TDD Workflow (Red-Green-Refactor)
-- Always use strict Test-Driven Development (Red-Green-Refactor) when implementing features.
-- Execute an incremental loop for behaviors:
-  1. Write ONE failing test.
-  2. Confirm the test fails (Red).
-  3. Write the minimal implementation code needed to make it pass.
-  4. Confirm the test passes (Green).
-- ONE test at a time for **behavior tests** (user-observable flows). Do NOT one-shot a massive implementation.
-- **Validation/guard tests** (input boundary checks, error codes) may be grouped: write 2-4 related tests together, then implement. These test the same code path with different inputs — one red-green cycle per group, not per case. Use the project's parameterized or table-driven test support when testing the same function with multiple inputs.
-- Target ~10-15 tests per issue. If you're writing 25+, you're over-testing — group guards, skip trivial variations, focus on behaviors.
-- After all tests for a phase/feature pass, look for and execute refactoring candidates to clean up the code.
-
-# Integration & Boundary Testing
-- Unit TDD tests modules. It does NOT test that modules work together correctly.
-- After completing TDD for any feature that crosses a system boundary (client↔server, service↔DB), write at least one integration test that verifies the actual data flow across that boundary.
-- When mocking an external dependency (WebSocket, HTTP API, DB), your mock encodes assumptions about what the real system does. After unit TDD passes, verify those assumptions with a test that uses the real dependency (or a realistic test double like cloudflare:test).
-- If a feature can't be meaningfully tested without mocking, add a "contract test" that verifies the mock's assumptions match the real system's behavior.
-
 # PRD Breakdown
-- Start with ONE minimal bootstrap issue (types, test config, project setup) — just enough to unblock vertical slices.
+- Start with ONE infrastructure-only bootstrap issue (deps, CI, build/test config) — no types, no route shells, no domain logic. Let the first vertical slice create the code it needs.
 - After bootstrap, every issue must be a vertical slice: a complete user-observable flow crossing all necessary layers (DB → server → client → UI).
 - Acceptance criteria describe what the USER sees, not what the code does.
 - Each issue must include an integration test that verifies the flow end-to-end.

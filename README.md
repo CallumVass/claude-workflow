@@ -54,8 +54,9 @@ Reads PRD.md and creates GitHub issues via `gh`. Issues are vertical slices (not
 Processes open issues in dependency-aware batches, parallelizing independent issues. For each:
 - **Planner** — reads issue + codebase, outputs sequenced test plan for the implementor
 - Spawns implementor agent with TDD (red-green-refactor)
+- **Refactorer** — scans new code against existing codebase, extracts shared patterns if warranted
 - **CI check** — if CI fails, invokes ci-fixer agent (up to `CI_FIX_RETRIES`)
-- **Code review** — runs reviewer→judge loop (up to `REVIEW_MAX_CYCLES`), implementor fixes findings
+- **Code review** — single-pass reviewer→judge pipeline, implementor fixes findings
 - Squash merges, then **synthesizer** distills patterns into `LEARNINGS.md`
 - Independent issues run in parallel via git worktrees (up to `MAX_PARALLEL`)
 - Writes diagnostic report to `failures/` before any halt
@@ -175,6 +176,7 @@ agents/
   # Core agents (invoked by orchestrators)
   planner.md            — pre-implementation test sequencer (researches unfamiliar deps)
   implementor.md        — TDD feature builder
+  refactorer.md         — post-implementation cross-codebase deduplication
   code-reviewer.md      — structured checklist-driven reviewer
   review-judge.md       — validates review findings against actual code
   ci-fixer.md           — diagnoses and fixes CI failures
@@ -198,7 +200,7 @@ skills/
   retrospective/        — pipeline retrospective analysis patterns + output format
 
 templates/
-  CLAUDE.md.global      — user-level agent instructions (TDD, vertical slicing)
+  CLAUDE.md.global      — user-level agent instructions (planning, vertical slicing)
   CLAUDE.md.project     — project-level template (parameterized)
   hooks.json            — CI reminder hook (fires after git push / gh pr create)
 ```
@@ -209,36 +211,36 @@ Environment variables for `cw implement`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `TEST_CMD` | `pnpm test` | Command to run tests |
-| `CHECK_CMD` | `pnpm check` | Full CI check command |
-| `INSTALL_CMD` | `pnpm install --frozen-lockfile` | Dependency install command |
-| `CI_FIX_RETRIES` | `2` | Max ci-fixer attempts per CI failure |
-| `REVIEW_MAX_CYCLES` | `2` | Max review→fix cycles before halt |
+| `TEST_CMD` | *(auto-detected)* | Command to run tests |
+| `CHECK_CMD` | *(auto-detected)* | Full CI check command |
+| `INSTALL_CMD` | *(auto-detected)* | Dependency install command |
+| `CI_FIX_RETRIES` | `3` | Max ci-fixer attempts per CI failure |
 | `MAX_PARALLEL` | `1` | Max concurrent issue implementations (via git worktrees) |
 | `CW_BACKEND` | `claude` | Agent backend: `claude` or `opencode` |
 | `CW_MODEL` | *(default)* | Override model ID for agent invocations |
 | `NO_COLOR` | *(unset)* | Disable colored output ([no-color.org](https://no-color.org)) |
 | `CW_VERBOSE` | *(unset)* | Show full tool output (no truncation) |
 
-## Stack Examples
+## Language Detection
 
-The pipeline is stack-agnostic — just set the env vars for your toolchain.
+Commands are auto-detected from project files. Env var overrides always win.
+
+| Project file | TEST_CMD | CHECK_CMD | INSTALL_CMD |
+|---|---|---|---|
+| `mix.exs` | `mix test` | `mix format --check-formatted && mix credo && mix test` | `mix deps.get` |
+| `Cargo.toml` | `cargo test` | `cargo clippy -- -D warnings && cargo test` | *(none)* |
+| `go.mod` | `go test ./...` | `go vet ./... && go test ./...` | `go mod download` |
+| `*.sln` / `*.csproj` | `dotnet test` | `dotnet build --warnaserror && dotnet test` | `dotnet restore` |
+| `pyproject.toml` / `requirements.txt` | `pytest` | `ruff check . && pytest` | `pip install -e '.[dev]'` |
+| `package.json` | `<pm> test` | `<pm> run check` | `<pm> install --frozen-lockfile` |
+
+Package manager (`<pm>`) is detected from lockfile: `pnpm-lock.yaml` → pnpm, `yarn.lock` → yarn, `bun.lockb` → bun, else npm.
+
+Override when auto-detection doesn't fit:
 
 ```bash
-# Elixir / Phoenix
-TEST_CMD="mix test" CHECK_CMD="mix precommit" INSTALL_CMD="mix deps.get" cw implement
-
-# TypeScript / Node
-TEST_CMD="pnpm test" CHECK_CMD="pnpm check" INSTALL_CMD="pnpm install --frozen-lockfile" cw implement
-
-# .NET / C#
-TEST_CMD="dotnet test" CHECK_CMD="dotnet build --warnaserror && dotnet test" INSTALL_CMD="dotnet restore" cw implement
-
-# Python
-TEST_CMD="pytest" CHECK_CMD="ruff check . && mypy . && pytest" INSTALL_CMD="pip install -r requirements.txt" cw implement
-
-# Go
-TEST_CMD="go test ./..." CHECK_CMD="go vet ./... && staticcheck ./... && go test ./..." INSTALL_CMD="go mod download" cw implement
+CHECK_CMD="mix precommit" cw implement
+TEST_CMD="go test -race ./..." cw implement
 ```
 
 ## Guardrails
@@ -248,7 +250,7 @@ The pipeline enforces quality at 5 layers:
 1. **Pre-commit hook** — blocks commits to main, runs typecheck + lint
 2. **Claude hook** (`.claude/hooks.json`) — reminds agent to watch CI after push
 3. **CLAUDE.md rules** — agent reads before acting (branch workflow, TDD, regression prevention)
-4. **Code review loop** — reviewer finds issues, judge validates with evidence, implementor fixes
+4. **Code review** — single-pass reviewer→judge pipeline, implementor fixes validated findings
 5. **Bash script gates** — verifies PR creation, CI pass, review pass, and diagnostics on failure
 
 ## Troubleshooting
@@ -289,7 +291,7 @@ In scripts, `<HALT>` triggers failure reports and exits. In the IDE, the orchest
 
 **CI keeps failing**: Check `failures/issue-N.md` for the last 100 lines of CI logs. Common fixes: missing env vars in CI, dependency version mismatches, flaky tests.
 
-**Review not resolving**: Reviewer found issues the implementor couldn't fix within `REVIEW_MAX_CYCLES`. Check `failures/issue-N.md` for unresolved findings. Consider increasing `REVIEW_MAX_CYCLES` or fixing manually.
+**Review findings not fixed**: Reviewer found issues the implementor couldn't resolve. Check `failures/issue-N.md` for unresolved findings. Fix manually and push.
 
 ### Logs
 

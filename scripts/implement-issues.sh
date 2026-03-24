@@ -12,13 +12,57 @@ source "$SCRIPT_DIR/lib.sh"
 # Pin progress log to repo root so worktrees share it
 PROGRESS_LOG="$REPO_ROOT/progress.log"
 
+# --- Auto-detect project commands ---
+# Env var overrides always win. Otherwise, detect from project files.
+auto_detect_commands() {
+  local test_cmd="" check_cmd="" install_cmd=""
+
+  if [ -f "mix.exs" ]; then
+    test_cmd="mix test"
+    check_cmd="mix format --check-formatted && mix credo && mix test"
+    install_cmd="mix deps.get"
+  elif [ -f "Cargo.toml" ]; then
+    test_cmd="cargo test"
+    check_cmd="cargo clippy -- -D warnings && cargo test"
+    install_cmd=":"
+  elif [ -f "go.mod" ]; then
+    test_cmd="go test ./..."
+    check_cmd="go vet ./... && go test ./..."
+    install_cmd="go mod download"
+  elif compgen -G "*.sln" >/dev/null 2>&1 || compgen -G "*.csproj" >/dev/null 2>&1; then
+    test_cmd="dotnet test"
+    check_cmd="dotnet build --warnaserror && dotnet test"
+    install_cmd="dotnet restore"
+  elif [ -f "pyproject.toml" ] || [ -f "requirements.txt" ]; then
+    test_cmd="pytest"
+    check_cmd="ruff check . && pytest"
+    install_cmd="pip install -e '.[dev]' 2>/dev/null || pip install -r requirements.txt 2>/dev/null || :"
+  elif [ -f "package.json" ]; then
+    local pm="npm"
+    if [ -f "pnpm-lock.yaml" ]; then pm="pnpm"
+    elif [ -f "yarn.lock" ]; then pm="yarn"
+    elif [ -f "bun.lockb" ]; then pm="bun"
+    fi
+    test_cmd="$pm test"
+    check_cmd="$pm run check"
+    case "$pm" in
+      pnpm) install_cmd="pnpm install --frozen-lockfile" ;;
+      yarn) install_cmd="yarn install --frozen-lockfile" ;;
+      bun)  install_cmd="bun install --frozen-lockfile" ;;
+      npm)  install_cmd="npm ci" ;;
+    esac
+  fi
+
+  TEST_CMD="${TEST_CMD:-$test_cmd}"
+  CHECK_CMD="${CHECK_CMD:-$check_cmd}"
+  INSTALL_CMD="${INSTALL_CMD:-$install_cmd}"
+}
+
+auto_detect_commands
+
 # --- Configuration ---
-TEST_CMD="${TEST_CMD:-pnpm test}"
-CHECK_CMD="${CHECK_CMD:-pnpm check}"
-INSTALL_CMD="${INSTALL_CMD:-pnpm install --frozen-lockfile}"
 DEFAULT_RETRIES="${DEFAULT_RETRIES:-3}"
 CI_FIX_RETRIES="${CI_FIX_RETRIES:-$DEFAULT_RETRIES}"
-REVIEW_MAX_CYCLES="${REVIEW_MAX_CYCLES:-5}"
 MAX_PARALLEL="${MAX_PARALLEL:-1}"
 MERGE_RETRIES="${MERGE_RETRIES:-$DEFAULT_RETRIES}"
 
@@ -186,6 +230,23 @@ CONSTRAINTS:
       fi
     fi
 
+    # --- Refactorer (cross-codebase deduplication) ---
+    progress "#$issue_num — refactoring pass"
+    git checkout "$branch" 2>/dev/null || true
+
+    REFACTOR_PROMPT="You are on branch $branch. A new feature was just implemented for issue #$issue_num: $issue_title.
+
+Review the code added in this branch (use git diff main...$branch) and compare with the rest of the codebase.
+
+RULES:
+- Only refactor if there's a clear win (2+ duplicated blocks, or a pattern used 3+ times).
+- Run \`$CHECK_CMD\` after any refactoring.
+- Commit and push changes if you made any.
+- If no refactoring is needed, just say so and exit."
+
+    REFACTOR_TMPFILE=$(run_agent "refactorer" "$REFACTOR_PROMPT")
+    rm -f "$REFACTOR_TMPFILE"
+
     # --- CI + code review in parallel ---
     progress "#$issue_num — PR #$PR_NUM created, CI + review in parallel"
     git checkout "$branch" 2>/dev/null || true
@@ -214,17 +275,9 @@ Max retries: $CI_FIX_RETRIES"
     ) &
     CI_PID=$!
 
-    # Start first review cycle immediately (doesn't depend on CI)
-    review_passed=false
-    FINDINGS=""
-
-    progress "#$issue_num — review cycle 1/$REVIEW_MAX_CYCLES"
-    FINDINGS=$("$SCRIPT_DIR/review.sh" "$PR_NUM" --skip-checks) && review_passed=true
-
-    if [ "$review_passed" = false ]; then
-      # Only critical findings require re-review; major/minor/nit are fix-and-go
-      has_critical=$(echo "$FINDINGS" | grep -ci "severity.*critical" || true)
-
+    # Single-pass review (no re-review cycles)
+    progress "#$issue_num — reviewing"
+    FINDINGS=$("$SCRIPT_DIR/review.sh" "$PR_NUM" --skip-checks) || {
       progress "#$issue_num — fixing review findings"
       git checkout "$branch" 2>/dev/null || true
 
@@ -239,54 +292,7 @@ RULES:
 
       FIX_TMPFILE=$(run_agent "implementor" "$FIX_PROMPT")
       rm -f "$FIX_TMPFILE"
-
-      if [ "$has_critical" -eq 0 ]; then
-        # No critical findings — trust the fix, skip re-review
-        progress "#$issue_num — no critical findings, skipping re-review"
-        review_passed=true
-      else
-        # Critical findings — re-review required
-        for review_cycle in $(seq 2 "$REVIEW_MAX_CYCLES"); do
-          progress "#$issue_num — review cycle $review_cycle/$REVIEW_MAX_CYCLES"
-          FIX_DIFF=$(git diff HEAD~1)
-          SCOPED_DIFF="SCOPED RE-REVIEW. Only check: were original issues fixed? Did fixes introduce new bugs?
-
-Original findings:
-$FINDINGS
-
-Fix diff:
-$FIX_DIFF"
-          FINDINGS=$("$SCRIPT_DIR/review.sh" --diff "$SCOPED_DIFF" --context "scoped re-review") && review_passed=true && break
-
-          progress "#$issue_num — fixing review findings"
-          git checkout "$branch" 2>/dev/null || true
-
-          FIX_PROMPT="You are on branch $branch. Fix the following code review findings:
-
-$FINDINGS
-
-RULES:
-- Fix only the cited issues. Do not refactor or improve unrelated code.
-- Run \`$CHECK_CMD\` after fixes.
-- Commit and push the fixes."
-
-          FIX_TMPFILE=$(run_agent "implementor" "$FIX_PROMPT")
-          rm -f "$FIX_TMPFILE"
-        done
-      fi
-    fi
-
-    if [ "$review_passed" = false ]; then
-      wait "$CI_PID" 2>/dev/null || true
-      rm -f "$CI_STATUS_FILE"
-      progress "${S_FAIL} #$issue_num — review not resolved after $REVIEW_MAX_CYCLES cycles"
-      capture_failure "$issue_num" "$branch" "review-not-resolved-after-$REVIEW_MAX_CYCLES-cycles" \
-        "## Unresolved Findings
-
-$FINDINGS"
-      echo "failure review-not-resolved-after-$REVIEW_MAX_CYCLES-cycles" > "$status_file"
-      exit 1
-    fi
+    }
 
     # Wait for CI to finish (may already be done)
     wait "$CI_PID" 2>/dev/null || true
@@ -306,41 +312,8 @@ ${CI_LOGS:-(logs unavailable)}
       exit 1
     fi
 
-    RUN_ID=$(awk '{print $2}' "$CI_STATUS_FILE" 2>/dev/null || echo "")
     rm -f "$CI_STATUS_FILE"
-
     progress "#$issue_num — CI + review passed"
-
-    # Re-verify CI after review fixes — if a new run appeared and it fails, try to fix it
-    LATEST_RUN_ID=$(gh run list --branch "$branch" --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || echo "")
-    if [ -n "$LATEST_RUN_ID" ] && [ "$LATEST_RUN_ID" != "$RUN_ID" ]; then
-      if ! gh run watch "$LATEST_RUN_ID" --exit-status 2>/dev/null; then
-        progress "#$issue_num — CI failed after review fixes, attempting repair"
-        POST_REVIEW_CI_PROMPT="Fix CI failures on branch $branch for issue #$issue_num: $issue_title.
-
-Issue context:
-$issue_body
-
-Max retries: $CI_FIX_RETRIES"
-        POST_CI_TMPFILE=$(run_agent "ci-fix-orchestrator" "$POST_REVIEW_CI_PROMPT")
-
-        if check_signal "$POST_CI_TMPFILE" "$HALT_FLAG"; then
-          progress "${S_FAIL} #$issue_num — CI failed after review fixes (repair failed)"
-          POST_RUN_ID=$(extract_halt_field "$POST_CI_TMPFILE" "RUN_ID")
-          CI_LOGS=""
-          [ -n "$POST_RUN_ID" ] && CI_LOGS=$(gh run view "$POST_RUN_ID" --log-failed 2>/dev/null | tail -100 || echo "(logs unavailable)")
-          capture_failure "$issue_num" "$branch" "ci-failed-after-review-fixes" \
-            "## CI Logs (last 100 lines)
-\`\`\`
-${CI_LOGS:-(logs unavailable)}
-\`\`\`"
-          rm -f "$POST_CI_TMPFILE"
-          echo "failure ci-failed-after-review-fixes" > "$status_file"
-          exit 1
-        fi
-        rm -f "$POST_CI_TMPFILE"
-      fi
-    fi
 
     progress "#$issue_num — ready to merge (PR #$PR_NUM)"
     echo "success $PR_NUM" > "$status_file"

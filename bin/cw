@@ -55,11 +55,10 @@ Environment variables:
   CW_BACKEND        Agent backend        (default: claude; options: claude, opencode)
   CW_MODEL          Model override       (default: backend default)
 
-  TEST_CMD          Test command         (default: pnpm test)
-  CHECK_CMD         Full CI check        (default: pnpm check)
-  INSTALL_CMD       Dependency install   (default: pnpm install --frozen-lockfile)
-  CI_FIX_RETRIES    CI fix attempts      (default: 2)
-  REVIEW_MAX_CYCLES Review→fix cycles    (default: 2)
+  TEST_CMD          Test command         (auto-detected from project files)
+  CHECK_CMD         Full CI check        (auto-detected from project files)
+  INSTALL_CMD       Dependency install   (auto-detected from project files)
+  CI_FIX_RETRIES    CI fix attempts      (default: 3)
   MAX_PARALLEL      Concurrent issues    (default: 1)
 
 Orchestrators (use as your agent in Claude Code / opencode):
@@ -70,9 +69,9 @@ Orchestrators (use as your agent in Claude Code / opencode):
   ci-fix-orchestrator            Diagnose → fix → verify CI
 
 Agents (usable standalone via: claude --agent <name>):
-  planner, implementor, synthesizer, retrospective, code-reviewer,
-  review-judge, ci-fixer, issue-creator, single-issue-creator,
-  prd-integrator, prd-critic, prd-architect
+  planner, implementor, refactorer, synthesizer, retrospective,
+  code-reviewer, review-judge, ci-fixer, issue-creator,
+  single-issue-creator, prd-integrator, prd-critic, prd-architect
 
 All commands run in the current working directory.
 Requires: claude or opencode (based on CW_BACKEND), gh (GitHub CLI), jq

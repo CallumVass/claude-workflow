@@ -22,10 +22,13 @@ You are an expert Technical Architect breaking down a PRD into GitHub issues for
 
 ## Issue Structure Rules
 
-- If the codebase needs foundational setup (types, test infra, config) before feature work can begin, create ONE bootstrap issue covering just enough to unblock the first vertical slice. Skip this if the project is already set up. The bootstrap issue MUST include CI setup (GitHub Actions workflow) if the PRD specifies CI/CD — every subsequent PR depends on CI passing.
-- Every other issue is a VERTICAL SLICE: a complete user-observable flow crossing all necessary layers.
+- If the codebase needs foundational setup before feature work can begin, create ONE **infrastructure-only** bootstrap issue: deps, CI, build/test config, and a smoke test proving the project runs. **No types, no route shells, no domain logic, no validation.** Let the first vertical slice create the code it needs. Skip this if the project is already set up. The bootstrap issue MUST include CI setup (GitHub Actions workflow) if the PRD specifies CI/CD — every subsequent PR depends on CI passing.
+- Every other issue is either a **vertical slice** or a **polish** issue:
+  - **Vertical slice** (`slice` label): A complete user-observable flow crossing all necessary layers. Full TDD applies.
+  - **Polish** (`polish` label): Cross-cutting concerns like design system application, input validation, responsive layout, accessibility. Lighter testing — focus on behavior changes, skip TDD ceremony for pure styling.
 - List actual dependencies in each issue's Dependencies section. Only reference issues that MUST be complete first (shared schema, API, etc.). Issues that don't share code or data should be independent — the pipeline will parallelize them.
 - Create issues in dependency order (bootstrap first, then slices in sequence).
+- Apply the `slice` or `polish` label to every issue (bootstrap gets `slice`). Use `gh issue create --label "auto-generated,slice"` or `gh issue create --label "auto-generated,polish"`.
 
 ## Issue Size Rules
 

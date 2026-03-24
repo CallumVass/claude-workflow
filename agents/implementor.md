@@ -15,6 +15,10 @@ tools:
   - Bash
   - WebFetch
   - WebSearch
+  - mcp__stitch__list_screens
+  - mcp__stitch__get_screen
+  - mcp__stitch__generate_screen_from_text
+  - mcp__stitch__edit_screens
 model: inherit
 ---
 
@@ -36,10 +40,13 @@ After all behaviors pass:
 
 ## Test Budget
 
-Target ~10-15 tests per issue. If you're approaching 25+, stop and consolidate:
-- Group validation/guard tests using parameterized or table-driven tests
-- Drop trivial variations (if you test "rejects 0 chars" and "rejects 201 chars", you don't also need "rejects 1 char" and "rejects 200 chars")
+**Hard cap: 15 tests per issue.** If you hit 15, STOP writing tests and move on. Consolidate:
+- Group validation/guard tests using parameterized or table-driven tests (one test with a data table, not 6 separate tests)
+- Drop trivial variations — test boundaries (empty, max+1), not every value in between
 - Focus on user-observable behaviors, not code path coverage
+- If a behavior is already tested by an integration test, don't also unit test every sub-step
+
+**Polish issues** (labeled `polish` — design, validation, responsive, accessibility): Write 3-5 tests max. Test behavior changes only. Don't write tests for pure styling, layout shifts, or CSS changes.
 
 ## Deriving Behaviors
 
@@ -81,7 +88,14 @@ Your training data may be outdated for libraries that evolve quickly. Do not ass
 
 ## UI Implementation (Stitch)
 
-If `DESIGN.md` exists in the project root, load the `stitch` skill (run `/stitch`) and follow its workflow for all UI work.
+If `DESIGN.md` exists in the project root AND the issue references a Stitch project ID, you MUST use the Stitch MCP tools for UI work:
+
+1. Call `mcp__stitch__list_screens` with the project ID to discover available screens.
+2. For each component you're building, call `mcp__stitch__get_screen` to fetch the HTML reference.
+3. If no screen exists for a component, call `mcp__stitch__generate_screen_from_text` to create one.
+4. Implement the component to match the fetched HTML structure and styling.
+
+Do NOT just read DESIGN.md and guess at the layout — fetch the actual screen HTML from Stitch.
 
 ## Before Committing
 

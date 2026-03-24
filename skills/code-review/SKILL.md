@@ -65,15 +65,14 @@ Rate each finding 0-100:
 
 Rate each finding:
 
-- **critical**: Will cause a bug, security vulnerability, data loss, or crash in production. Must be fixed and re-reviewed before merge.
-- **major**: Significant logic error, missing error handling that will affect users, or performance issue under normal load. Must be fixed but re-review is optional.
-- **minor**: Code quality issue, edge case gap, suboptimal pattern, or test improvement. Fix and merge without re-review.
+- **critical**: Will cause a bug, security vulnerability, data loss, or crash in production. Must be fixed before merge.
+- **major**: Significant logic error, missing error handling that will affect users, or performance issue under normal load. Must be fixed.
+- **minor**: Code quality issue, edge case gap, suboptimal pattern, or test improvement. Fix and merge.
 - **nit**: Style preference, naming suggestion, or trivial improvement. Fix at author's discretion — does not block merge.
 
 Guidelines:
 - Security findings are always `critical`.
 - Test Quality findings are `minor` unless they mask a real bug.
-- Only `critical` findings require a re-review cycle after fixing.
 
 ## FINDINGS Output Format
 
@@ -124,12 +123,3 @@ These are explicitly out of scope. Flagging them wastes everyone's time:
 - **Missing features** — "you should also add..." unless it's in the acceptance criteria
 - **Documentation gaps** — unless the code is genuinely incomprehensible
 
-## Scoped Re-Review Protocol
-
-When re-reviewing after fixes:
-1. You receive ONLY the fix diff + original findings list
-2. Check ONLY: "Were original issues fixed?" + "Did fixes introduce new bugs?"
-3. Do NOT perform a full fresh review
-4. Do NOT raise new issues unrelated to the original findings
-5. If fixes are correct, output `<PASS>`
-6. If issues remain, output updated FINDINGS (only unresolved items)

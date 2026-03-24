@@ -38,7 +38,10 @@ Body:
 ## Creating Issues
 
 - Use `gh issue create` to create each issue.
-- Add a label "auto-generated" to each issue (create the label first if it does not exist).
+- Add labels to each issue (create labels first if they don't exist):
+  - `auto-generated` on ALL issues
+  - `slice` on vertical slice issues (including bootstrap)
+  - `polish` on cross-cutting polish issues (design, validation, responsive, accessibility)
 - After creating each issue, note its number so you can reference it in subsequent issues' Dependencies sections.
 
 ## Rules

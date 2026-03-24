@@ -9,6 +9,9 @@ tools:
   - Grep
   - WebSearch
   - WebFetch
+  - mcp__stitch__list_screens
+  - mcp__stitch__get_screen
+  - mcp__stitch__generate_screen_from_text
 model: inherit
 ---
 
@@ -72,7 +75,7 @@ Stitch project: `<project-id>`
 
 ## Rules
 
-- **Target 8-15 test cases per issue.** If you're listing 20+, you're over-testing — group related checks and drop trivial variations.
+- **Hard cap: 12 test entries per issue.** If you're listing more, you're over-testing — group related guards into single entries and drop trivial variations. Polish issues (labeled `polish`) get 3-5 entries max.
 - **Behavior tests get one entry each.** A behavior = a user-observable flow (e.g., "host creates poll and sees room code"). One red-green cycle.
 - **Validation/guard tests get grouped.** Input boundary checks on the same function (e.g., "rejects empty question, too-long question, too few options, too many options") = ONE entry labeled "validation: <function/endpoint>". The implementor writes these as parameterized tests in a single cycle.
 - **Dependency order.** If test 3 requires the code from test 1, test 1 comes first.

@@ -39,15 +39,6 @@ By default, review the diff provided to you. If invoked on a PR, review the PR d
 5. **Score confidence**. Only include findings >= 85.
 6. **Output in FINDINGS format** as defined in the code-review skill.
 
-## Scoped Re-Review Mode
-
-When you receive a fix diff + original findings list (instead of a full PR diff):
-
-1. For each original finding, check if the fix addresses it.
-2. Check if any fix introduced a NEW bug (directly related to the fix only).
-3. Do NOT raise new issues unrelated to the original findings.
-4. Output `<PASS>` if all issues are resolved, or updated FINDINGS with only unresolved items.
-
 ## Rules
 
 - **Evidence required**: every finding must cite file:line and quote the code. No evidence = no finding.
