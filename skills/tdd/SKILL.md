@@ -9,13 +9,21 @@ description: Test-driven development with red-green-refactor loop. Use when user
 
 Examples in this skill use framework-neutral pseudocode. Translate test syntax/assertions to the project's language and test runner.
 
-**Core principle**: Tests should verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't.
+**Core principle**: Test at system boundaries, not internal modules. Mock only what you don't control.
+
+Every system has two testable boundaries:
+1. **Server/backend boundary** — test through the real runtime or framework test harness (HTTP handlers, message handlers, queue consumers). Use real storage, real state.
+2. **Client/frontend boundary** — test at the route/page level. Mock the network edge (HTTP/WebSocket), but render real components with real stores and real hooks.
+
+Internal modules (stores, hooks, services, helpers) get covered transitively by boundary tests. Don't test them separately — if a store has a bug, a route-level test that exercises the same behavior will catch it.
+
+**Unit test only pure algorithmic functions** where the math matters (rounding, scoring, splitting, validation). Everything else goes through a boundary.
 
 **Good tests** are integration-style: they exercise real code paths through public APIs. They describe _what_ the system does, not _how_ it does it. A good test reads like a specification - "user can checkout with valid cart" tells you exactly what capability exists. These tests survive refactors because they don't care about internal structure.
 
 **Bad tests** are coupled to implementation. They mock internal collaborators, test private methods, or verify through external means (like querying a database directly instead of using the interface). The warning sign: your test breaks when you refactor, but behavior hasn't changed. If you rename an internal function and tests fail, those tests were testing implementation, not behavior.
 
-See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking guidelines.
+See [tests.md](tests.md) for boundary examples, what not to test, and [mocking.md](mocking.md) for mocking guidelines.
 
 ## Anti-Pattern: Horizontal Slices
 

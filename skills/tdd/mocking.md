@@ -58,6 +58,24 @@ The SDK approach means:
 - Easier to see which endpoints a test exercises
 - Stronger contracts per endpoint (typed or documented)
 
+## The Boundary Rule
+
+Your system has boundaries — edges where your code talks to something you don't control. Mock **at** those edges, never inside.
+
+Examples of boundaries (mock these):
+- Network calls (HTTP, WebSocket, gRPC) from client to server
+- External service SDKs (payment, email, auth providers)
+- Databases when a test DB isn't practical (prefer real test DBs)
+- Time, randomness, filesystem
+
+Examples of internals (never mock these):
+- Your own stores, reducers, or state management
+- Your own hooks, composables, or services
+- Your own utility/helper modules
+- Internal class collaborators
+
+**If you're mocking something you wrote, you're testing implementation, not behavior.** The test will break on refactor and catch nothing real.
+
 ## Mock Fidelity
 
 Mocks lie. Every mock encodes assumptions about external behavior. When those assumptions are wrong, tests pass but the app breaks.

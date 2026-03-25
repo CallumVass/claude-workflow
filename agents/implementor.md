@@ -57,12 +57,22 @@ When given acceptance criteria or an issue:
 - Order by dependency (foundational behaviors first).
 - Each behavior = one red-green cycle. Each validation group = one cycle.
 
-## Integration Tests
+## Boundary-Only Testing
 
-When your feature crosses a system boundary (client↔server, service↔DB, service↔external API):
+**All tests go at system boundaries.** Your system has two:
 
-- Write at least one integration test that verifies actual data flow across the boundary.
-- If you mocked a dependency in unit tests, verify those mock assumptions hold against the real thing.
+1. **Server/backend boundary** — test through the real runtime or framework test harness. Exercise real handlers, real storage, real state. These are your primary tests.
+2. **Client/frontend boundary** — test at the route/page level. Mock only the network edge (HTTP/WebSocket). Render real components with real stores and real hooks.
+
+Internal modules (stores, hooks, services, helpers) get covered transitively by boundary tests. **Do NOT write separate tests for:**
+- State management (stores, reducers, state machines)
+- Custom hooks or composables
+- Individual UI components
+- Config files (CI, bundler, deploy)
+- Design tokens or CSS classes
+
+**DO write separate unit tests for:**
+- Pure algorithmic functions where the math matters (rounding, scoring, splitting, validation logic)
 
 ## Test Reuse — CRITICAL
 
@@ -86,16 +96,19 @@ Your training data may be outdated for libraries that evolve quickly. Do not ass
 - When uncertain about how a library works internally, use `opensrc` to fetch and read its source (e.g., `npx opensrc <package>` or `npx opensrc owner/repo`).
 - Never guess at an API that the issue explicitly flags as different from what you might expect.
 
-## UI Implementation (Stitch)
+## UI Implementation
 
-If `DESIGN.md` exists in the project root AND the issue references a Stitch project ID, you MUST use the Stitch MCP tools for UI work:
+If `DESIGN.md` exists in the project root, it is the **styling authority** for all UI work. Every visual decision (colors, fonts, spacing, elevation, component patterns) must follow its rules.
 
+**With a Stitch project ID** (referenced in the PRD, issue, or plan):
 1. Call `mcp__stitch__list_screens` with the project ID to discover available screens.
-2. For each component you're building, call `mcp__stitch__get_screen` to fetch the HTML reference.
-3. If no screen exists for a component, call `mcp__stitch__generate_screen_from_text` to create one.
-4. Implement the component to match the fetched HTML structure and styling.
+2. For **every route or component you touch**, call `mcp__stitch__get_screen` to fetch the HTML reference. This is your exact layout target — implement structure and spacing from this HTML, not from imagination.
+3. If no screen exists for a component, call `mcp__stitch__generate_screen_from_text` to create one before implementing.
+4. Do NOT just read DESIGN.md and guess at the layout — fetch the actual screen HTML.
 
-Do NOT just read DESIGN.md and guess at the layout — fetch the actual screen HTML from Stitch.
+**Without a Stitch project ID**:
+- Use DESIGN.md tokens (colors, typography, spacing, component patterns) directly.
+- Follow the do's/don'ts in DESIGN.md for component styling.
 
 ## Before Committing
 

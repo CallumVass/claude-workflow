@@ -30,7 +30,10 @@ You do NOT write code. You do NOT create or modify files. You only output a plan
    - The issue warns against using a particular syntax or API pattern
 
    Your training data may be outdated for rapidly-evolving libraries. When in doubt, search. For version-specific cases, fetch the library's README or migration guide. Include concrete API patterns and examples in Library Notes — the implementor will rely on them.
-5. **Check DESIGN.md**: If `DESIGN.md` exists, load the `stitch` skill (run `/stitch`) and follow its workflow. Discover available screens, map them to components this issue touches, and note missing ones in the plan.
+5. **Check DESIGN.md**: If `DESIGN.md` exists in the project root:
+   - Load the `stitch` skill (run `/stitch`).
+   - If a Stitch project ID is referenced in the PRD or issue, call `list_screens` to discover available screens. Map each screen to the route/component this issue touches. Note missing screens the implementor should generate.
+   - If no Stitch project ID exists, the implementor should use DESIGN.md tokens directly. No screen fetching needed.
 6. **Identify behaviors**: Break acceptance criteria into the smallest testable behaviors.
 7. **Sequence by dependency**: Order behaviors so foundational ones come first. Later tests can build on earlier ones.
 8. **Output the plan**.
@@ -43,25 +46,28 @@ You do NOT write code. You do NOT create or modify files. You only output a plan
 ### Context
 <1-3 sentences: what exists today, what the issue changes>
 
-### Test Sequence
+### Boundary Tests
 
+Server/backend boundary (test through real runtime/framework test harness):
 1. <one-line behavior description>
-   `path/to/test/file.test.ts`
+   `path/to/test/file`
 
+Client/frontend boundary (test at route/page level, mock network edge only):
 2. <one-line behavior description>
-   `path/to/test/file.test.ts`
+   `path/to/test/file`
 
 ...
 
-### Integration Tests
+### Unit Tests (only for pure algorithmic functions)
 
-N. <one-line behavior crossing a system boundary>
-   `path/to/test/file.integration.test.ts`
+N. <one-line description of algorithm/validation logic>
+   `path/to/test/file`
 
 ### Design Reference (if DESIGN.md exists)
-Stitch project: `<project-id>`
+Stitch project: `<project-id>` (omit if no Stitch project)
 - <screen name> → screen ID `<id>` → `path/to/component`
 - MISSING: <component description> → implementor should generate via Stitch
+(If no Stitch project, note "Use DESIGN.md tokens directly — no screen fetching.")
 
 ### Existing Test Helpers
 - <list any shared setup functions, factory helpers, or beforeEach patterns in existing test files that the implementor MUST reuse — e.g., "createRoomWithVoters() in poll-room.test.ts sets up a DO with N connected voters", "renderWithRouter() in test-utils.tsx wraps components in router context". If none exist yet, note what helpers SHOULD be extracted during the refactor step.>
@@ -76,10 +82,11 @@ Stitch project: `<project-id>`
 ## Rules
 
 - **Hard cap: 12 test entries per issue.** If you're listing more, you're over-testing — group related guards into single entries and drop trivial variations. Polish issues (labeled `polish`) get 3-5 entries max.
+- **Boundary tests are the default.** Most tests should be at system boundaries (server-side integration tests through the real runtime, client-side route/page tests with only the network edge mocked). Internal modules (stores, hooks, services) get covered transitively.
+- **Unit tests are the exception.** Only list unit tests for pure algorithmic functions where edge cases matter (rounding, scoring, splitting, validation logic). Do NOT plan unit tests for stores, hooks, components, config files, or design tokens.
 - **Behavior tests get one entry each.** A behavior = a user-observable flow (e.g., "host creates poll and sees room code"). One red-green cycle.
-- **Validation/guard tests get grouped.** Input boundary checks on the same function (e.g., "rejects empty question, too-long question, too few options, too many options") = ONE entry labeled "validation: <function/endpoint>". The implementor writes these as parameterized tests in a single cycle.
+- **Validation/guard tests get grouped.** Input boundary checks on the same function (e.g., "rejects empty input, too-long input, invalid chars") = ONE entry labeled "validation: <function/endpoint>". The implementor writes these as parameterized tests in a single cycle.
 - **Dependency order.** If test 3 requires the code from test 1, test 1 comes first.
 - **Use existing test file conventions.** Match the project's test file naming and location patterns.
-- **Integration tests last.** Unit behaviors first, then integration tests that verify cross-boundary flows.
 - **Concise.** The implementor will figure out assertions and test code — just name the behavior and the file.
 - **No code.** Do not write test code, implementation code, or pseudocode.
