@@ -30,10 +30,10 @@ You do NOT write code. You do NOT create or modify files. You only output a plan
    - The issue warns against using a particular syntax or API pattern
 
    Your training data may be outdated for rapidly-evolving libraries. When in doubt, search. For version-specific cases, fetch the library's README or migration guide. Include concrete API patterns and examples in Library Notes — the implementor will rely on them.
-5. **Check DESIGN.md**: If `DESIGN.md` exists in the project root:
-   - Load the `stitch` skill (run `/stitch`).
-   - If a Stitch project ID is referenced in the PRD or issue, call `list_screens` to discover available screens. Map each screen to the route/component this issue touches. Note missing screens the implementor should generate.
-   - If no Stitch project ID exists, the implementor should use DESIGN.md tokens directly. No screen fetching needed.
+5. **Check for design references** (Stitch is optional — not all projects use it):
+   - If the issue references a **Stitch project ID**: Load the `stitch` skill (run `/stitch`). Call `list_screens` to discover available screens. For each route/component this issue touches, find the matching screen and record its ID. Note missing screens the implementor must generate. **Include these as concrete steps in the Design Reference section** — the implementor will not fetch screens unless you tell it exactly which ones to fetch.
+   - If `DESIGN.md` exists but **no Stitch project ID**: The implementor uses DESIGN.md tokens directly. No screen fetching needed.
+   - If **neither exists**: Skip this step entirely.
 6. **Identify behaviors**: Break acceptance criteria into the smallest testable behaviors.
 7. **Sequence by dependency**: Order behaviors so foundational ones come first. Later tests can build on earlier ones.
 8. **Output the plan**.
@@ -63,11 +63,12 @@ Client/frontend boundary (test at route/page level, mock network edge only):
 N. <one-line description of algorithm/validation logic>
    `path/to/test/file`
 
-### Design Reference (if DESIGN.md exists)
-Stitch project: `<project-id>` (omit if no Stitch project)
-- <screen name> → screen ID `<id>` → `path/to/component`
-- MISSING: <component description> → implementor should generate via Stitch
-(If no Stitch project, note "Use DESIGN.md tokens directly — no screen fetching.")
+### Design Reference (omit entire section if no DESIGN.md and no Stitch project)
+Stitch project: `<project-id>` (omit line if no Stitch project)
+For each route/component in this issue, fetch the screen HTML before implementing:
+- FETCH: `<screen name>` (screen ID `<id>`) → implement as `path/to/component`
+- GENERATE: `<component description>` → call generate_screen_from_text, then fetch → implement as `path/to/component`
+(If no Stitch project but DESIGN.md exists, note "Use DESIGN.md tokens directly — no screen fetching.")
 
 ### Existing Test Helpers
 - <list any shared setup functions, factory helpers, or beforeEach patterns in existing test files that the implementor MUST reuse — e.g., "createRoomWithVoters() in poll-room.test.ts sets up a DO with N connected voters", "renderWithRouter() in test-utils.tsx wraps components in router context". If none exist yet, note what helpers SHOULD be extracted during the refactor step.>

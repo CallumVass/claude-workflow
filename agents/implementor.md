@@ -100,13 +100,15 @@ Your training data may be outdated for libraries that evolve quickly. Do not ass
 
 If `DESIGN.md` exists in the project root, it is the **styling authority** for all UI work. Every visual decision (colors, fonts, spacing, elevation, component patterns) must follow its rules.
 
-**With a Stitch project ID** (referenced in the PRD, issue, or plan):
-1. Call `mcp__stitch__list_screens` with the project ID to discover available screens.
-2. For **every route or component you touch**, call `mcp__stitch__get_screen` to fetch the HTML reference. This is your exact layout target — implement structure and spacing from this HTML, not from imagination.
-3. If no screen exists for a component, call `mcp__stitch__generate_screen_from_text` to create one before implementing.
-4. Do NOT just read DESIGN.md and guess at the layout — fetch the actual screen HTML.
+**With a Stitch project ID** (referenced in the issue, plan, or PRD):
+1. **GATE: Do NOT write any UI code until you have fetched every relevant screen.** If the plan's Design Reference lists screens to FETCH or GENERATE, do that first.
+2. Call `mcp__stitch__list_screens` with the project ID to discover available screens.
+3. For **every route or component you touch**, call `mcp__stitch__get_screen` to fetch the HTML reference. This is your exact layout target — implement structure and spacing from this HTML, not from imagination.
+4. If no screen exists for a component, call `mcp__stitch__generate_screen_from_text` to create one, then fetch it with `get_screen`.
+5. Do NOT just read DESIGN.md and guess at the layout — fetch the actual screen HTML.
 
-**Without a Stitch project ID**:
+**Without a Stitch project ID** (no ID in issue, plan, or PRD):
+- Do NOT call any Stitch MCP tools — the project doesn't use Stitch.
 - Use DESIGN.md tokens (colors, typography, spacing, component patterns) directly.
 - Follow the do's/don'ts in DESIGN.md for component styling.
 

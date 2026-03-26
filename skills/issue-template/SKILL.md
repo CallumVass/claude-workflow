@@ -51,3 +51,4 @@ Body:
 - Each vertical slice must cross all necessary layers to deliver a working flow.
 - **Design is per-slice, not a final pass.** If DESIGN.md exists, every slice that touches UI must implement its screens using the design system. Do NOT create a standalone "apply design system" issue at the end — that produces a superficial CSS retrofit instead of structurally correct layouts. Each slice should look right when it ships.
 - If a Stitch project ID exists, reference it in each UI-touching issue so the implementor fetches screen HTML during implementation, not after.
+- **No standalone validation/edge-case issues.** Validation, error handling, and edge cases belong in the slice that introduces the behavior — not deferred to a separate issue.
