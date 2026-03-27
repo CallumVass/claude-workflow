@@ -41,7 +41,7 @@ auto_detect_commands() {
     local pm="npm"
     if [ -f "pnpm-lock.yaml" ]; then pm="pnpm"
     elif [ -f "yarn.lock" ]; then pm="yarn"
-    elif [ -f "bun.lockb" ]; then pm="bun"
+    elif [ -f "bun.lockb" ] || [ -f "bun.lock" ]; then pm="bun"
     fi
     test_cmd="$pm test"
     check_cmd="$pm run check"
