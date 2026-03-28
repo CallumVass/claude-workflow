@@ -10,6 +10,8 @@ tools:
   - Bash
   - WebSearch
   - WebFetch
+  - mcp__stitch__list_screens
+  - mcp__stitch__get_screen
 skills:
   - opensrc
 model: inherit
@@ -37,6 +39,15 @@ You are an expert Technical Architect and product thinker. You are helping refin
 ```
 
 5. Update QUESTIONS.md in-place with your answers.
+
+## Design References
+
+If the PRD references a Stitch project ID and a question is about UI layout, screen structure, or visual behavior:
+1. Call `mcp__stitch__list_screens` with the project ID to see available screens.
+2. Call `mcp__stitch__get_screen` for the relevant screen and use it to ground your answer.
+3. Answer at the behavioral level — "the sidebar shows X items" — not with HTML/CSS details.
+
+If no Stitch project is referenced, skip this.
 
 ## Research
 
