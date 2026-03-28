@@ -202,7 +202,7 @@ WORKFLOW:
 3. Implement using TDD following the plan. One test at a time: write failing test -> minimal implementation -> test passes -> next test.
 4. After all behaviors pass, look for refactoring opportunities. Run tests after each refactor.
 5. Run \`$CHECK_CMD\`. Fix any failures.
-6. Commit, push, and create a PR with 'Closes #$issue_num' in the PR body.
+6. Commit, push, and create a PR. CRITICAL: The PR body MUST include 'Closes #$issue_num' so the issue auto-closes on merge.
 7. Watch CI with: gh run list --branch $branch --limit 1 --json databaseId --jq '.[0].databaseId' then gh run watch <id> --exit-status
 8. If CI fails, read logs with gh run view <id> --log-failed, fix, push, and watch again.
 
@@ -211,6 +211,7 @@ CONSTRAINTS:
 - Do NOT modify or delete tests from previous issues.
 - Do NOT change public interfaces from previous issues unless this issue requires it.
 - Do NOT merge the PR. Only create it — merging is handled externally.
+- The PR body MUST contain 'Closes #$issue_num' — without this the issue won't auto-close.
 - If you encounter a conflict with previous work that you cannot resolve, create the PR as draft and output exactly: $HALT_FLAG
 - IMPORTANT: If the planner surfaces unresolved questions, resolve them yourself using reasonable defaults and proceed. Do NOT stop and wait — there is no human in the loop. Use your best judgment based on the issue context and codebase."
 
