@@ -22,6 +22,7 @@ Body:
 <Bulleted checklist describing what the USER sees/experiences. Not implementation details.>
 - [ ] User does X and sees Y
 - [ ] ...
+<If Stitch designs exist, include VISUAL criteria: layout structure, navigation elements, design tokens applied. E.g., "Sidebar nav is visible with Workflows, Pipelines, History, Settings items" or "Status bar shows green/red sidecar dot, port, and version".>
 
 ## Test Plan
 <Specific tests that must pass. Tests should be at system boundaries.>
@@ -50,5 +51,6 @@ Body:
 - Acceptance criteria must describe user-observable behavior, not code structure.
 - Each vertical slice must cross all necessary layers to deliver a working flow.
 - **Design is per-slice, not a final pass.** If DESIGN.md exists, every slice that touches UI must implement its screens using the design system. Do NOT create a standalone "apply design system" issue at the end — that produces a superficial CSS retrofit instead of structurally correct layouts. Each slice should look right when it ships.
-- If a Stitch project ID exists, reference it in each UI-touching issue so the implementor fetches screen HTML during implementation, not after.
+- If a Stitch project ID exists, the issue-creator MUST fetch screen HTML and embed it directly in the issue body. Do NOT rely on the implementor calling MCP tools — embed the HTML so the layout reference is always available.
+- If Stitch screens show persistent layout chrome (sidebar, nav, status bar), an "App Shell / Layout Chrome" issue must be created as the first UI slice establishing the shared layout wrapper before any screen-specific issues.
 - **No standalone validation/edge-case issues.** Validation, error handling, and edge cases belong in the slice that introduces the behavior — not deferred to a separate issue.

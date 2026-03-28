@@ -10,6 +10,11 @@ Stitch is the source of truth for UI design. It provides two things:
 - **DESIGN.md** lives in the project root. If it doesn't exist, Stitch is not in use — skip all Stitch workflows.
 - **Stitch project ID** is specified in the PRD or issue (not in DESIGN.md). Look for a `stitch_project_id` field or similar reference.
 
+## Two Consumers of Stitch
+
+1. **Issue creator** (primary) — fetches ALL screens, analyzes them for shared layout chrome, embeds screen HTML directly into issue bodies. This ensures the implementor always has the layout reference without needing MCP access.
+2. **Implementor** (fallback) — fetches screens for any UI not already embedded in the issue, or generates new screens for components that don't have mockups.
+
 ## Workflow: Implementing UI
 
 ### 1. Read the Design System

@@ -9,6 +9,8 @@ tools:
   - Glob
   - Grep
   - Bash
+  - mcp__stitch__list_screens
+  - mcp__stitch__get_screen
 model: inherit
 ---
 
@@ -53,11 +55,22 @@ You are an expert Technical Architect breaking down a PRD into GitHub issues for
 ## Design System Rules
 
 - **Check PRD for a Stitch project ID** (e.g., `project \`1234567890\``). This is optional — not all projects use Stitch.
-- **If a Stitch project ID exists**: Include it in the Context of EVERY issue that touches UI. Use this exact block at the top of Context:
+- **If a Stitch project ID exists**: You MUST fetch screens and embed them in issues:
+
+  1. Call `mcp__stitch__list_screens` with the project ID to discover all screens.
+  2. For EACH screen, call `mcp__stitch__get_screen` and download the HTML.
+  3. **Analyze the screens for persistent layout chrome** (sidebar nav, top bar, status bar, app shell). If the screens share a common layout wrapper, create an **"App Shell / Layout Chrome"** issue as the FIRST UI slice (after bootstrap). This issue establishes the shared layout: navigation structure, routing wrapper, persistent chrome, and any shared components visible on every screen.
+  4. **Embed the relevant screen HTML directly in each issue's Context section.** Do NOT rely on the implementor calling MCP tools — they may not have access or may skip it. Include a `### Screen Reference` subsection with the HTML (or key structural excerpts if the full HTML is too large). This is the layout authority.
+  5. **Add visual acceptance criteria** alongside functional ones. For each UI-touching issue, include criteria like:
+     - "Sidebar navigation is visible with items: X, Y, Z"
+     - "Layout matches the screen reference: [describe key structural elements]"
+     - "Design tokens from DESIGN.md are applied: [specific colors, fonts, spacing]"
+  6. Still include the Stitch project ID reference block so the implementor can fetch screens for any components not covered in the embedded HTML:
   ```
   **Stitch design project: `<id>`**
-  Before implementing any UI in this issue, you MUST call `list_screens` then `get_screen` for each route/component. The screen HTML is the layout authority — do not guess at layouts.
+  The screen HTML below is the layout authority. For any UI not covered here, call `list_screens` then `get_screen`.
   ```
+
 - **If no Stitch project ID exists but DESIGN.md exists**: Reference it in UI issues: "See DESIGN.md for color palette, typography, component styles. Apply tokens directly."
 - **If neither exists**: No design guidance needed.
 - Any issue that creates or modifies user-facing UI must include the applicable design reference above.
