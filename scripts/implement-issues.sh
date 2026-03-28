@@ -177,6 +177,9 @@ implement_single_issue() {
     else
       eval "$INSTALL_CMD" || { echo "failure install-failed" > "$status_file"; exit 1; }
 
+      # Create branch deterministically — don't leave naming to the agent
+      git checkout -b "$branch" 2>/dev/null || git checkout "$branch"
+
       # Learnings context
       LEARNINGS_CONTEXT=""
       if [ -f "LEARNINGS.md" ]; then
@@ -194,7 +197,7 @@ $(cat LEARNINGS.md)"
 $issue_body
 $LEARNINGS_CONTEXT
 WORKFLOW:
-1. Create branch: $branch
+1. You are on branch: $branch — do NOT create or switch branches.
 2. Read the codebase to understand current state.
 3. Implement using TDD following the plan. One test at a time: write failing test -> minimal implementation -> test passes -> next test.
 4. After all behaviors pass, look for refactoring opportunities. Run tests after each refactor.
@@ -204,6 +207,7 @@ WORKFLOW:
 8. If CI fails, read logs with gh run view <id> --log-failed, fix, push, and watch again.
 
 CONSTRAINTS:
+- Do NOT create or rename branches. You are already on the correct branch: $branch
 - Do NOT modify or delete tests from previous issues.
 - Do NOT change public interfaces from previous issues unless this issue requires it.
 - Do NOT merge the PR. Only create it — merging is handled externally.

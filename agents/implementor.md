@@ -92,8 +92,8 @@ Before starting, check if `LEARNINGS.md` exists in the project root. If it does,
 Your training data may be outdated for libraries that evolve quickly. Do not assume you know the correct API — verify it.
 
 - If the issue or test plan includes **Library Notes**, follow them exactly.
-- If the issue mentions a specific version, API generation, or warns "do not use X syntax" — search the web or fetch the library source with `opensrc` to verify the correct API before writing your first test.
-- When uncertain about how a library works internally, use `opensrc` to fetch and read its source (e.g., `npx opensrc <package>` or `npx opensrc owner/repo`).
+- **Use `opensrc` first** to verify any API you're unsure about: run `npx opensrc <package>` (or `npx opensrc owner/repo`) to download the library source, then read the relevant files. This works even when the package isn't installed yet. Do NOT look in `node_modules/` or use WebSearch/WebFetch for API verification — `opensrc` gives you the actual source code.
+- If the issue mentions a specific version, API generation, or warns "do not use X syntax" — fetch the library source with `opensrc` and verify the correct API before writing your first test.
 - Never guess at an API that the issue explicitly flags as different from what you might expect.
 
 ## UI Implementation
@@ -106,6 +106,9 @@ If `DESIGN.md` exists in the project root, it is the **styling authority** for a
 3. For **every route or component you touch**, call `mcp__stitch__get_screen` to fetch the HTML reference. This is your exact layout target — implement structure and spacing from this HTML, not from imagination.
 4. If no screen exists for a component, call `mcp__stitch__generate_screen_from_text` to create one, then fetch it with `get_screen`.
 5. Do NOT just read DESIGN.md and guess at the layout — fetch the actual screen HTML.
+6. **Configure Tailwind theme BEFORE writing components.** Stitch HTML uses custom theme colors (e.g., `bg-primary/20`, `text-on-surface-variant/60`). Ensure the project's Tailwind config defines ALL design system colors from DESIGN.md. If colors are missing, add them first — do not work around missing theme values with inline styles.
+7. **Copy Stitch Tailwind classes verbatim.** Use the exact Tailwind classes from the Stitch HTML. Do NOT translate to inline styles, CSS modules, or `<style>` blocks. Inline styles lose hover states, opacity modifiers (`/20`, `/60`), and responsive breakpoints. If a Stitch class doesn't resolve, fix the Tailwind config — don't replace the class.
+8. **No custom CSS.** Use Tailwind exclusively. Zero `<style>` blocks, zero CSS files for component styling. Every visual property comes from a Tailwind class matching the Stitch source.
 
 **Without a Stitch project ID** (no ID in issue, plan, or PRD):
 - Do NOT call any Stitch MCP tools — the project doesn't use Stitch.

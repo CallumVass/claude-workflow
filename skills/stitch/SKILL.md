@@ -56,5 +56,8 @@ If a screen needs changes (requirements changed, new section added):
 
 - **DESIGN.md is the styling authority.** All visual decisions (colors, spacing, typography, elevation, component patterns, do's/don'ts) come from DESIGN.md.
 - **Screen HTML is the layout authority.** Translate the HTML into the project's framework idioms (JSX, Vue SFC, etc.), but the visual output must match exactly.
+- **Copy Stitch classes verbatim.** Stitch HTML uses Tailwind classes. Use the exact same Tailwind classes in your components — do NOT translate them to inline styles, CSS modules, or custom CSS. Inline styles lose hover states, opacity modifiers, and responsive breakpoints.
+- **Configure Tailwind theme first.** Stitch HTML relies on custom theme colors (e.g., `bg-primary/20`, `text-on-surface-variant/60`). Before implementing any UI, ensure the project's Tailwind config defines all design system colors from DESIGN.md so Stitch classes resolve correctly. If the theme is missing colors, add them — don't work around it with inline styles.
+- **No custom CSS.** Use Tailwind exclusively. If you find yourself writing custom CSS or `<style>` blocks to replicate something from Stitch, you're doing it wrong — the Tailwind class already exists in the Stitch HTML.
 - **Don't deviate from the design.** If the design conflicts with requirements, flag it — don't silently "improve" it.
 - **Generation is slow.** `generate_screen_from_text` can take minutes. Don't retry on timeout — check with `get_screen` later.
