@@ -16,6 +16,7 @@ Always review in this order. Check each category completely before moving to the
 - Control flow bugs (off-by-one, infinite loops, unreachable code)
 - Wrong return values or incorrect transformations
 - State management bugs (stale state, missing updates, race conditions)
+- Dead wiring: new modules/classes only imported in test files, never called from production code. If a class is created but no production code path instantiates or calls it, the feature is not wired — flag as critical.
 
 ### 2. Security
 - Injection vulnerabilities (SQL, XSS, command injection)

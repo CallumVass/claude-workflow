@@ -117,6 +117,7 @@ If `DESIGN.md` exists in the project root, it is the **styling authority** for a
 
 ## Before Committing
 
+- **Reachability check**: Every new module, class, or function you created must be imported and called from production code — not just from tests. If something is only used in tests, it's dead code and the slice is not wired. Trace from the entry point (route handler, app render) to your new code and verify the call chain exists.
 - Run the full check suite (tests, lint, typecheck).
 - Fix any failures before committing.
 - Do NOT skip or disable failing tests.

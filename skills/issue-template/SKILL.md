@@ -25,7 +25,8 @@ Body:
 <If Stitch designs exist, include VISUAL criteria: layout structure, navigation elements, design tokens applied. E.g., "Sidebar nav is visible with Workflows, Pipelines, History, Settings items" or "Status bar shows green/red sidecar dot, port, and version".>
 
 ## Test Plan
-<Specific tests that must pass. Tests should be at system boundaries.>
+<Specific tests that must pass. FIRST test must be a trigger test — entry point to observable output.>
+- [ ] Trigger: <entry-point → observable output, proving the slice is wired end-to-end>
 - [ ] Boundary: <describe test through real runtime or route-level render>
 - [ ] Unit (only if pure algorithm): <describe algorithmic edge case test>
 

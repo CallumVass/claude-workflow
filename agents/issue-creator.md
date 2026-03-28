@@ -33,6 +33,23 @@ You are an expert Technical Architect breaking down a PRD into GitHub issues for
 - Create issues in dependency order (bootstrap first, then slices in sequence).
 - Apply the `slice` or `polish` label to every issue (bootstrap gets `slice`). Use `gh issue create --label "auto-generated,slice"` or `gh issue create --label "auto-generated,polish"`.
 
+## Test Plan Rules
+
+- **Every slice MUST include a "trigger test"** — a test that starts from the user's entry point (API endpoint, route render, CLI command) and verifies the expected output at the other end. This is the test that proves the slice is actually wired together, not just built in pieces.
+- Test plans must test through system boundaries (HTTP API, rendered route), NOT internal modules. If a test plan item names an internal class or module directly, rewrite it to go through the API or route instead. Internal modules get tested transitively.
+
+Bad test plan (tests layers separately — components can pass while disconnected):
+- "Integration: JobScheduler enqueues work and emits events"
+- "Integration: WebSocket endpoint broadcasts messages"
+- "Frontend: Dashboard component renders chart"
+
+Good test plan (tests through boundaries — forces wiring):
+- "Trigger: POST /api/jobs → GET /api/jobs/:id/status returns 'running'"
+- "Boundary: POST /api/jobs → WebSocket on /ws receives progress events"
+- "Frontend: /dashboard route renders chart with data from API"
+
+The bad plan tests three modules that each work in isolation. The good plan tests the same functionality but forces the modules to be connected — if the route handler doesn't call the scheduler, the trigger test fails.
+
 ## Issue Size Rules
 
 - Target ~300-500 lines of implementation per issue (excluding tests). If a slice would be larger, split it into sub-slices that each still cross layers.
