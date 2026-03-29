@@ -46,8 +46,6 @@ After all behaviors pass:
 - Focus on user-observable behaviors, not code path coverage
 - If a behavior is already tested by an integration test, don't also unit test every sub-step
 
-**Polish issues** (labeled `polish` — design, validation, responsive, accessibility): Write 3-5 tests max. Test behavior changes only. Don't write tests for pure styling, layout shifts, or CSS changes.
-
 ## Deriving Behaviors
 
 When given acceptance criteria or an issue:

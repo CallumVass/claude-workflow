@@ -10,8 +10,7 @@
 - If a task is large, automatically structure the plan as a "multi-phase plan" broken down into sequential implementation steps.
 
 # PRD Breakdown
-- Start with ONE infrastructure-only bootstrap issue (deps, CI, build/test config) — no types, no route shells, no domain logic. Let the first vertical slice create the code it needs.
-- After bootstrap, every issue must be a vertical slice: a complete user-observable flow crossing all necessary layers (DB → server → client → UI).
+- Every issue is a vertical slice: a complete user-observable flow crossing all necessary layers (DB → server → client → UI). Each slice sets up whatever infra it needs (deps, CI, config) as part of delivering its flow.
 - Acceptance criteria describe what the USER sees, not what the code does.
 - Each issue must include an integration test that verifies the flow end-to-end.
 - Deliver the minimum across all layers to make a flow work — don't gold-plate one layer before touching the next.

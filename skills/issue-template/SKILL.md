@@ -40,10 +40,7 @@ Body:
 ## Creating Issues
 
 - Use `gh issue create` to create each issue.
-- Add labels to each issue (create labels first if they don't exist):
-  - `auto-generated` on ALL issues
-  - `slice` on vertical slice issues (including bootstrap)
-  - `polish` on cross-cutting polish issues (design, validation, responsive, accessibility)
+- Add the `auto-generated` label to every issue (create the label first if it doesn't exist).
 - After creating each issue, note its number so you can reference it in subsequent issues' Dependencies sections.
 
 ## Rules
@@ -51,7 +48,7 @@ Body:
 - The Context section is CRITICAL — the agent works from this alone. Include behavioral requirements, data model concepts, API contracts, and edge cases inline. Do NOT say "see PRD.md". But also do NOT paste raw PRD sections — extract and distill only what THIS slice needs.
 - Acceptance criteria must describe user-observable behavior, not code structure.
 - Each vertical slice must cross all necessary layers to deliver a working flow.
-- **Design is per-slice, not a final pass.** If DESIGN.md exists, every slice that touches UI must implement its screens using the design system. Do NOT create a standalone "apply design system" issue at the end — that produces a superficial CSS retrofit instead of structurally correct layouts. Each slice should look right when it ships.
+- **Design is per-slice, not a final pass.** If DESIGN.md exists, every slice that touches UI must implement its screens using the design system. Each slice should look right when it ships.
 - If a Stitch project ID exists, the issue-creator MUST fetch screen HTML and embed it directly in the issue body. Do NOT rely on the implementor calling MCP tools — embed the HTML so the layout reference is always available.
-- If Stitch screens show persistent layout chrome (sidebar, nav, status bar), an "App Shell / Layout Chrome" issue must be created as the first UI slice establishing the shared layout wrapper before any screen-specific issues.
 - **No standalone validation/edge-case issues.** Validation, error handling, and edge cases belong in the slice that introduces the behavior — not deferred to a separate issue.
+- **No standalone polish issues.** Accessibility, responsive layout, and design compliance belong in each slice — not deferred to a cross-cutting issue.

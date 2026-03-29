@@ -86,7 +86,7 @@ Copy Stitch Tailwind classes verbatim — do NOT translate to inline styles (los
 
 ## Rules
 
-- **Hard cap: 12 test entries per issue.** If you're listing more, you're over-testing — group related guards into single entries and drop trivial variations. Polish issues (labeled `polish`) get 3-5 entries max.
+- **Hard cap: 12 test entries per issue.** If you're listing more, you're over-testing — group related guards into single entries and drop trivial variations.
 - **First test must be a trigger test.** This test proves the slice is wired: it starts from the user's entry point (API call, route render) and asserts the expected output at the other end. If the issue's test plan includes a "Trigger" test, plan it first. If the issue's test plan lacks one, add it — a slice without a trigger test can pass all tests while remaining disconnected.
 - **Boundary tests are the default.** Most tests should be at system boundaries (server-side integration tests through the real runtime, client-side route/page tests with only the network edge mocked). Internal modules (stores, hooks, services) get covered transitively. If the issue's test plan names internal classes or modules directly (e.g., "StageRunner emits events"), reframe them as boundary tests (e.g., "POST /api/runs → events appear on SSE endpoint").
 - **Unit tests are the exception.** Only list unit tests for pure algorithmic functions where edge cases matter (rounding, scoring, splitting, validation logic). Do NOT plan unit tests for stores, hooks, components, config files, or design tokens.

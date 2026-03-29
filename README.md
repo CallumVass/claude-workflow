@@ -61,6 +61,14 @@ Processes open issues in dependency-aware batches, parallelizing independent iss
 - Independent issues run in parallel via git worktrees (up to `MAX_PARALLEL`)
 - Writes diagnostic report to `failures/` before any halt
 
+Stages can be skipped with flags:
+
+```bash
+cw implement --skip-plan                          # no planner, implement directly
+cw implement --skip-plan --skip-refactor          # lean: implement → CI → review → merge
+cw implement --skip-plan --skip-refactor --skip-review  # minimal: implement → CI → merge
+```
+
 ### 4. `cw review` — Standalone Code Review
 
 Runs the full reviewer→judge pipeline independently.
@@ -129,7 +137,10 @@ Requires the Stitch MCP server to be configured in your Claude Code or OpenCode 
 | `cw prd-qa` | Refine PRD via multi-agent loop |
 | `cw create-issue "<desc>"` | Interactive QA → single GitHub issue |
 | `cw create-issues` | Decompose PRD.md into GitHub issues |
-| `cw implement` | Autonomous implementation pipeline |
+| `cw implement` | Autonomous implementation pipeline (flags below) |
+| `  --skip-plan` | Skip planner agent, implement directly |
+| `  --skip-refactor` | Skip refactorer pass after implementation |
+| `  --skip-review` | Skip code review + review-fix cycle |
 | `cw review <PR#>` | Code review (reviewer → judge) |
 | `cw evolve` | Pipeline retrospective → agent/skill improvements (PR) |
 

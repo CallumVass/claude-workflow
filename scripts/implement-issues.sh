@@ -43,8 +43,13 @@ auto_detect_commands() {
     elif [ -f "yarn.lock" ]; then pm="yarn"
     elif [ -f "bun.lockb" ] || [ -f "bun.lock" ]; then pm="bun"
     fi
-    test_cmd="$pm test"
-    check_cmd="$pm run check"
+    if [ "$pm" = "bun" ]; then
+      test_cmd="bun run test"
+      check_cmd="bun run check"
+    else
+      test_cmd="$pm test"
+      check_cmd="$pm run check"
+    fi
     case "$pm" in
       pnpm) install_cmd="pnpm install --frozen-lockfile" ;;
       yarn) install_cmd="yarn install --frozen-lockfile" ;;
@@ -59,6 +64,20 @@ auto_detect_commands() {
 }
 
 auto_detect_commands
+
+# --- Skip flags ---
+SKIP_PLAN=false
+SKIP_REVIEW=false
+SKIP_REFACTOR=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --skip-plan)    SKIP_PLAN=true; shift ;;
+    --skip-review)  SKIP_REVIEW=true; shift ;;
+    --skip-refactor) SKIP_REFACTOR=true; shift ;;
+    *) err "unknown flag: $1"; exit 1 ;;
+  esac
+done
 
 # --- Configuration ---
 DEFAULT_RETRIES="${DEFAULT_RETRIES:-3}"
@@ -189,8 +208,14 @@ LEARNINGS (patterns and conventions from previous issues):
 $(cat LEARNINGS.md)"
       fi
 
-      # --- Implementation orchestrator (plan → implement) ---
-      progress "#$issue_num $issue_title — planning & implementing"
+      # --- Implementation (plan → implement, or implement-only) ---
+      if [ "$SKIP_PLAN" = true ]; then
+        progress "#$issue_num $issue_title — implementing (skip plan)"
+        IMPL_AGENT="implementor"
+      else
+        progress "#$issue_num $issue_title — planning & implementing"
+        IMPL_AGENT="implementation-orchestrator"
+      fi
 
       ORCH_PROMPT="Implement issue #$issue_num: $issue_title
 
@@ -215,7 +240,7 @@ CONSTRAINTS:
 - If you encounter a conflict with previous work that you cannot resolve, create the PR as draft and output exactly: $HALT_FLAG
 - IMPORTANT: If the planner surfaces unresolved questions, resolve them yourself using reasonable defaults and proceed. Do NOT stop and wait — there is no human in the loop. Use your best judgment based on the issue context and codebase."
 
-      TMPFILE=$(run_agent "implementation-orchestrator" "$ORCH_PROMPT")
+      TMPFILE=$(run_agent "$IMPL_AGENT" "$ORCH_PROMPT")
       if check_signal "$TMPFILE" "$HALT_FLAG"; then
         rm -f "$TMPFILE"
         echo "failure agent-halted" > "$status_file"
@@ -236,10 +261,13 @@ CONSTRAINTS:
     fi
 
     # --- Refactorer (cross-codebase deduplication) ---
-    progress "#$issue_num — refactoring pass"
-    git checkout "$branch" 2>/dev/null || true
+    if [ "$SKIP_REFACTOR" = true ]; then
+      progress "#$issue_num — skipping refactor"
+    else
+      progress "#$issue_num — refactoring pass"
+      git checkout "$branch" 2>/dev/null || true
 
-    REFACTOR_PROMPT="You are on branch $branch. A new feature was just implemented for issue #$issue_num: $issue_title.
+      REFACTOR_PROMPT="You are on branch $branch. A new feature was just implemented for issue #$issue_num: $issue_title.
 
 Review the code added in this branch (use git diff main...$branch) and compare with the rest of the codebase.
 
@@ -249,8 +277,9 @@ RULES:
 - Commit and push changes if you made any.
 - If no refactoring is needed, just say so and exit."
 
-    REFACTOR_TMPFILE=$(run_agent "refactorer" "$REFACTOR_PROMPT")
-    rm -f "$REFACTOR_TMPFILE"
+      REFACTOR_TMPFILE=$(run_agent "refactorer" "$REFACTOR_PROMPT")
+      rm -f "$REFACTOR_TMPFILE"
+    fi
 
     # --- CI + code review in parallel ---
     progress "#$issue_num — PR #$PR_NUM created, CI + review in parallel"
@@ -281,12 +310,15 @@ Max retries: $CI_FIX_RETRIES"
     CI_PID=$!
 
     # Single-pass review (no re-review cycles)
-    progress "#$issue_num — reviewing"
-    FINDINGS=$("$SCRIPT_DIR/review.sh" "$PR_NUM" --skip-checks) || {
-      progress "#$issue_num — fixing review findings"
-      git checkout "$branch" 2>/dev/null || true
+    if [ "$SKIP_REVIEW" = true ]; then
+      progress "#$issue_num — skipping review"
+    else
+      progress "#$issue_num — reviewing"
+      FINDINGS=$("$SCRIPT_DIR/review.sh" "$PR_NUM" --skip-checks) || {
+        progress "#$issue_num — fixing review findings"
+        git checkout "$branch" 2>/dev/null || true
 
-      FIX_PROMPT="You are on branch $branch. Fix the following code review findings:
+        FIX_PROMPT="You are on branch $branch. Fix the following code review findings:
 
 $FINDINGS
 
@@ -295,9 +327,10 @@ RULES:
 - Run \`$CHECK_CMD\` after fixes.
 - Commit and push the fixes."
 
-      FIX_TMPFILE=$(run_agent "implementor" "$FIX_PROMPT")
-      rm -f "$FIX_TMPFILE"
-    }
+        FIX_TMPFILE=$(run_agent "implementor" "$FIX_PROMPT")
+        rm -f "$FIX_TMPFILE"
+      }
+    fi
 
     # Wait for CI to finish (may already be done)
     wait "$CI_PID" 2>/dev/null || true

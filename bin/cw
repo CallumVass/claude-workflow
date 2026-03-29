@@ -38,6 +38,9 @@ Commands:
   implement               Implement open issues autonomously.
                           Plan → TDD → CI → code review → merge, in dependency order.
                           Parallelizes independent issues via git worktrees.
+    --skip-plan           Skip planner agent, implement directly.
+    --skip-refactor       Skip refactorer pass after implementation.
+    --skip-review         Skip code review + review-fix cycle.
 
   review <PR#>            Code review (reviewer → judge pipeline).
     review --branch <br>  Review branch vs main.
