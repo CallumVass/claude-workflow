@@ -13,6 +13,7 @@ description: >
   </example>
 skills:
   - code-review
+  - review-plugins
 tools:
   - Agent(code-reviewer, review-judge)
   - Bash
@@ -72,15 +73,32 @@ DETAILS: <check command output summary>
 Do not proceed to LLM review.
 Skip this step if the user passes `--skip-checks` or specifies "skip deterministic checks" in the prompt.
 
+### Step 2.5: Detect domain plugins
+
+Using the `review-plugins` skill as a guide, scan plugin subdirectories listed in its "Available Plugins" table. For each plugin, read its `PLUGIN.md` frontmatter and check whether the diff matches:
+
+1. **files**: At least one changed file in the diff matches any of the plugin's file glob patterns.
+2. **content**: At least one of the plugin's content strings appears anywhere in the diff text.
+
+Both conditions must be true for a plugin to match. Collect the directory names of all matching plugins.
+
+If no plugins match, proceed with core skills only. If plugins match, log which were detected (e.g., "Detected domain plugins: tailwind") and pass the list to code-reviewer in Step 3.
+
 ### Step 3: Spawn code-reviewer
 
-Launch the `code-reviewer` agent with the diff as a subagent:
+Launch the `code-reviewer` agent with the diff as a subagent. If domain plugins were detected in Step 2.5, include them in the prompt:
 
 ```
 Review the following diff for [context]:
 
 <the diff>
+
+Domain plugins detected: [list of plugin directory names]
+For each plugin, read `skills/review-plugins/<name>/PLUGIN.md` and apply its additional checks.
+If a finding needs deeper context, consult files in `skills/review-plugins/<name>/references/`.
 ```
+
+If no plugins were detected, omit the domain plugins section.
 
 Wait for the result.
 

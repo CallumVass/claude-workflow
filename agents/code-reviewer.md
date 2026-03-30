@@ -39,6 +39,15 @@ By default, review the diff provided to you. If invoked on a PR, review the PR d
 5. **Score confidence**. Only include findings >= 85.
 6. **Output in FINDINGS format** as defined in the code-review skill.
 
+## Domain Plugins
+
+If the orchestrator specifies domain plugins, apply them **after** the core checklist:
+
+1. Read each plugin's `PLUGIN.md` from `skills/review-plugins/<name>/PLUGIN.md`.
+2. Apply the plugin's additional checks using the same evidence and confidence requirements as the core checklist.
+3. If a finding needs deeper context to verify, read from the plugin's `references/` directory. Only read references when needed — not upfront.
+4. Plugin findings use the same FINDINGS format. Set the Category to the plugin name (e.g., `Tailwind CSS`) instead of a core category.
+
 ## Rules
 
 - **Evidence required**: every finding must cite file:line and quote the code. No evidence = no finding.
@@ -46,3 +55,4 @@ By default, review the diff provided to you. If invoked on a PR, review the PR d
 - **No anti-patterns**: do not flag items on the anti-pattern list in the code-review skill.
 - **Deterministic checks first**: assume lint, typecheck, and tests have already run. Do not duplicate what those tools catch.
 - **One pass, structured**: follow the checklist. Do not freestyle.
+- **Plugin references are lazy**: only read a plugin's `references/` when a specific finding needs verification or deeper context.
