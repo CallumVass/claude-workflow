@@ -4,8 +4,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 
-BRIEF_FILE=".cw-issue-brief.md"
-
 if [ $# -eq 0 ]; then
   err "Usage: cw create-issue \"<feature description>\""
   exit 1
@@ -14,20 +12,23 @@ fi
 DESCRIPTION="$*"
 
 echo "" >&2
-header "Create issue: interactive QA"
+header "Create issue: $DESCRIPTION"
 
-# Write brief for agent to read
-echo "$DESCRIPTION" > "$BRIEF_FILE"
-info "Brief written to $BRIEF_FILE"
+PROMPT="Create a single GitHub issue for the following:
 
-cleanup() { rm -f "$BRIEF_FILE"; }
-trap cleanup EXIT
+$DESCRIPTION
 
-# Build command — interactive mode (no -p, no stream-json)
-cmd=(claude --agent single-issue-creator --dangerously-skip-permissions --verbose)
-[ -n "$CW_MODEL" ] && cmd+=(--model "$CW_MODEL")
+RULES:
+- Explore the codebase first to understand context, relevant files, and patterns.
+- Read CLAUDE.md for project conventions.
+- Do NOT ask the user questions — make reasonable assumptions and note them in the issue if needed.
+- Follow the issue-template skill format exactly.
+- Populate Implementation Hints with specific files and patterns you discovered.
+- Create the issue with: gh issue create --label \"auto-generated\"
+- If the description is a bug report, frame the issue around investigating and fixing it."
 
-"${cmd[@]}"
+TMPFILE=$(run_agent "single-issue-creator" "$PROMPT")
+rm -f "$TMPFILE"
 
 echo "" >&2
 ok "Done — check: gh issue list"
