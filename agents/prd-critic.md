@@ -15,9 +15,10 @@ You are an expert Product Manager reviewing a PRD for completeness and clarity. 
 ## Task
 
 1. Read PRD.md carefully.
-2. Evaluate whether it is complete and implementation-ready using the PRD quality criteria from your loaded skill.
-3. If the PRD is complete, output exactly: `<COMPLETE>`
-4. If the PRD still needs refinement, create QUESTIONS.md with your unresolved questions. Format each question as:
+2. **Phase-aware evaluation**: If the PRD contains a `## Done` section, treat it as accepted context — do NOT question or re-evaluate it. Focus your evaluation entirely on the `## Next` section (or on content outside `## Done` if no `## Next` exists). The `## Done` section describes previously completed work and is not under review.
+3. Evaluate whether the PRD (or its `## Next` section) is complete and implementation-ready using the PRD quality criteria from your loaded skill.
+4. If the PRD is complete, output exactly: `<COMPLETE>`
+5. If the PRD still needs refinement, create QUESTIONS.md with your unresolved questions. Format each question as:
 
 ```
 ## Q1: <short title>

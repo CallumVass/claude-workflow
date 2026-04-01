@@ -46,6 +46,14 @@ REASON: prd-incomplete
 DETAILS: PRD.md appears incomplete — missing acceptance criteria or feature descriptions. Run prd-qa first.
 ```
 
+If the PRD contains a `## Done` section but no `## Next` section and no other unimplemented content:
+
+```
+<HALT>
+REASON: nothing-to-implement
+DETAILS: PRD.md has a Done section but no Next section — nothing to create issues for.
+```
+
 ### Step 3: Spawn issue-creator
 
 Launch the `issue-creator` agent:

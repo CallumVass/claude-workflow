@@ -43,11 +43,7 @@ You receive one of:
 
 If the issue has no acceptance criteria, ask the user to clarify before proceeding.
 
-### Step 2: Read LEARNINGS.md
-
-If `LEARNINGS.md` exists in the project root, read it. Pass its contents to both planner and implementor.
-
-### Step 3: Spawn planner
+### Step 2: Spawn planner
 
 Launch the `planner` agent as a subagent:
 
@@ -57,18 +53,16 @@ Plan the implementation for this issue by producing a sequenced list of test cas
 ISSUE: <title>
 
 <issue body>
-
-<LEARNINGS context if available>
 ```
 
 Wait for the result.
 
-### Step 4: Evaluate planner output
+### Step 3: Evaluate planner output
 
 - If the plan contains **Unresolved Questions**, surface them to the user and stop. Do not proceed to implementation until the user resolves them.
-- Otherwise, proceed to Step 5.
+- Otherwise, proceed to Step 4.
 
-### Step 5: Spawn implementor
+### Step 4: Spawn implementor
 
 Launch the `implementor` agent as a subagent with this prompt structure:
 
@@ -78,8 +72,6 @@ Implement the following issue using strict TDD (red-green-refactor).
 ISSUE: <title>
 
 <issue body>
-
-<LEARNINGS context if available>
 
 IMPLEMENTATION PLAN (follow this test sequence):
 <plan from planner>
@@ -106,7 +98,7 @@ CONSTRAINTS:
 
 Wait for the result.
 
-### Step 6: Report
+### Step 5: Report
 
 - If the implementor output contains `<HALT>` → report the blocker to the user, then emit:
   ```

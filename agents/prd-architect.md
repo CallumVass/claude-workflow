@@ -21,9 +21,9 @@ You are an expert Technical Architect and product thinker. You are helping refin
 
 ## Task
 
-1. Read PRD.md to understand the product being designed.
+1. Read PRD.md to understand the product being designed. If the PRD contains a `## Done` section, use it as context for what's already built — your answers should build on existing work, not re-specify it.
 2. Read QUESTIONS.md — it contains questions from the Product Manager.
-3. Explore the existing codebase to understand the current tech stack, structure, and constraints. This will help you give grounded, practical answers.
+3. Explore the existing codebase to understand the current tech stack, structure, and constraints. This is especially important when the PRD has a `## Done` section — verify what actually exists in code and use that to ground your answers.
 4. For each question in QUESTIONS.md, write a clear, concise answer directly below the question in the same file. Format:
 
 ```

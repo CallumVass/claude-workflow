@@ -199,15 +199,6 @@ implement_single_issue() {
       # Create branch deterministically — don't leave naming to the agent
       git checkout -b "$branch" 2>/dev/null || git checkout "$branch"
 
-      # Learnings context
-      LEARNINGS_CONTEXT=""
-      if [ -f "LEARNINGS.md" ]; then
-        LEARNINGS_CONTEXT="
-
-LEARNINGS (patterns and conventions from previous issues):
-$(cat LEARNINGS.md)"
-      fi
-
       # --- Implementation (plan → implement, or implement-only) ---
       if [ "$SKIP_PLAN" = true ]; then
         progress "#$issue_num $issue_title — implementing (skip plan)"
@@ -220,7 +211,7 @@ $(cat LEARNINGS.md)"
       ORCH_PROMPT="Implement issue #$issue_num: $issue_title
 
 $issue_body
-$LEARNINGS_CONTEXT
+
 WORKFLOW:
 1. You are on branch: $branch — do NOT create or switch branches.
 2. Read the codebase to understand current state.
@@ -374,18 +365,6 @@ while true; do
   info "Pre-flight: running tests on main"
   eval "$TEST_CMD" || { err "tests failing on main — fix before running pipeline"; exit 1; }
 
-  # Seed LEARNINGS.md if it doesn't exist (one-time, first run only)
-  # LEARNINGS.md is local-only (gitignored) to avoid divergence with parallel worktrees
-  if [ ! -f "LEARNINGS.md" ]; then
-    info "Seeding LEARNINGS.md from existing codebase"
-    SEED_PROMPT="This is a new project with no LEARNINGS.md yet. Explore the codebase and create an initial LEARNINGS.md capturing existing conventions, patterns, and architectural decisions that would help a developer working on their first issue.
-
-Keep it under 50 lines. Organize by topic. Only include non-obvious things."
-
-    SEED_TMPFILE=$(run_agent "synthesizer" "$SEED_PROMPT")
-    rm -f "$SEED_TMPFILE"
-  fi
-
   # Fetch open issues
   ALL_ISSUES=$(gh issue list --state open --label "auto-generated" --json number,title,body --jq 'sort_by(.number)')
   TOTAL=$(echo "$ALL_ISSUES" | jq 'length')
@@ -469,9 +448,6 @@ Keep it under 50 lines. Organize by topic. Only include non-obvious things."
 
     if [ -f "$STATUS_FILE" ] && grep -q "^success" "$STATUS_FILE"; then
       PR_NUM=$(awk '{print $2}' "$STATUS_FILE")
-
-      # Capture diff before merge (stays available after squash)
-      PR_DIFF=$(gh pr diff "$PR_NUM" 2>/dev/null || echo "(diff unavailable)")
 
       # Merge (with conflict resolution retry)
       merge_ok=false
@@ -566,21 +542,6 @@ ${MERGED_IN_BATCH:+PRs merged earlier in batch: $MERGED_IN_BATCH}"
       progress "${S_OK} #$NUM — merged (PR #$PR_NUM)"
       MERGED_IN_BATCH="${MERGED_IN_BATCH}
 - PR #$PR_NUM (issue #$NUM): $TITLE"
-
-      # Synthesizer — update LEARNINGS.md
-      SYNTH_PROMPT="A PR was just merged for issue #$NUM: $TITLE
-
-PR diff:
-$PR_DIFF
-
-Update LEARNINGS.md with any useful patterns, conventions, or gotchas from this change.
-If LEARNINGS.md exists, read it first and integrate — don't duplicate.
-Keep the file under 100 lines, organized by topic."
-
-      SYNTH_TMPFILE=$(run_agent "synthesizer" "$SYNTH_PROMPT")
-      rm -f "$SYNTH_TMPFILE"
-
-      # LEARNINGS.md is local-only (not committed) — no git add needed
 
       COMPLETED="$COMPLETED $NUM"
       ANY_SUCCESS=true

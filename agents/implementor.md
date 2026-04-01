@@ -81,10 +81,6 @@ Before writing your first test, read the existing test files in the areas you'll
 
 The goal: each new test should be mostly assertions, not setup. If a test is over 15 lines, the setup should probably be a helper.
 
-## Learnings
-
-Before starting, check if `LEARNINGS.md` exists in the project root. If it does, read it — it contains synthesized patterns, conventions, and gotchas from previous issues. Use this context to follow established patterns and avoid known pitfalls.
-
 ## Verify Unfamiliar APIs
 
 Your training data may be outdated for libraries that evolve quickly. Do not assume you know the correct API — verify it.

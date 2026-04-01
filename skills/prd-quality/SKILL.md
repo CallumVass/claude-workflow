@@ -40,6 +40,12 @@ A PRD is ready for implementation when it satisfies ALL of the following:
 - Explicit "in scope" and "out of scope" sections
 - No ambiguity about what will and won't be built
 
+### 6a. Phase Structure (for multi-phase projects)
+- If the project has prior work, the PRD should contain a `## Done` section summarizing completed work
+- The `## Next` section describes what's being built now
+- `## Done` is treated as accepted context — not re-evaluated for completeness
+- Only `## Next` (or content outside `## Done`) is evaluated against these criteria
+
 ### 7. Vertical-Slice Readiness
 - Requirements are structured around user-observable flows, not technical layers
 - Each feature can be decomposed into end-to-end slices

@@ -79,7 +79,6 @@ run_agent() {
   local prompt="$2"
   prompt="${prompt//PRD.md/$cwd/PRD.md}"
   prompt="${prompt//QUESTIONS.md/$cwd/QUESTIONS.md}"
-  prompt="${prompt//LEARNINGS.md/$cwd/LEARNINGS.md}"
   prompt="${prompt//DESIGN_BRIEF.md/$cwd/DESIGN_BRIEF.md}"
   local tmpfile
   tmpfile=$(mktemp)

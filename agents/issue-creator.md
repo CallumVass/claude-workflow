@@ -20,7 +20,17 @@ You are an expert Technical Architect breaking down a PRD into GitHub issues for
 
 1. Read PRD.md carefully.
 2. Read CLAUDE.md to understand the project rules and conventions.
-3. Decompose the PRD into implementation issues following the issue-template skill format.
+3. **Explore the codebase** before writing any issues. Understand:
+   - Current file structure, modules, and packages
+   - Existing patterns and conventions (how tests are structured, how routes/endpoints are defined, how state is managed)
+   - What code already exists that issues will build on or interact with
+   - Existing test helpers, factories, or shared utilities the implementor should reuse
+   This exploration prevents issues from conflicting with existing code or describing infrastructure that already exists.
+4. Decompose the PRD into implementation issues following the issue-template skill format.
+
+## Phase-Aware PRD
+
+If the PRD contains a `## Done` section, that describes work already completed. Do NOT create issues for anything in `## Done`. Only create issues for the `## Next` section (or for content outside of `## Done` if no `## Next` section exists). Your codebase exploration in step 3 should verify that `## Done` items actually exist in the code.
 
 ## Issue Structure Rules
 
