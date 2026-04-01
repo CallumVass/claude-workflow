@@ -124,12 +124,62 @@ Wait for the result.
 - If the review-judge output contains `<PASS>` → report **PASS** (judge filtered all findings).
 - Otherwise, report the validated findings to the user in full.
 
+### Step 7: Propose PR Comments (interactive mode only)
+
+Skip this step entirely if running autonomously (invoked by a script or as part of `cw implement`).
+
+If findings were reported AND a PR number + repo are known, generate a **Proposed PR Comments** section with ready-to-run `gh api` commands — one per finding. Do NOT run them. Present for user approval first.
+
+Format each command as:
+
+**Finding N** — path/to/file.ts:LINE
+
+```bash
+gh api repos/OWNER/REPO/pulls/PR/comments \
+  --method POST \
+  --field body="<comment>" \
+  --field commit_id="$(gh pr view PR --repo OWNER/REPO --json headRefOid -q .headRefOid)" \
+  --field path="path/to/file.ts" \
+  --field line=LINE \
+  --field side="RIGHT"
+```
+
+Rules for the `body` field:
+- Write as if you are a friendly senior dev helping a junior — warm, constructive, never condescending. These comments are posted under the user's real GitHub identity.
+- Keep it to 1-2 sentences: what the issue is + how to fix it (include a short inline code snippet if helpful).
+- Frame suggestions positively: "This could be simplified to..." or "Nice approach — one thing to watch out for here..." rather than "This is wrong."
+- Only generate commands for findings with a specific file + line.
+- Skip this section entirely if the review passed.
+
+### Step 8: Propose Review Decision (interactive mode only)
+
+Skip this step entirely if running autonomously.
+
+After Step 7 (or directly after Step 6 if the review passed), propose the `gh pr review` command for the user to approve before running.
+
+- **PASS** (no findings): propose `--approve`
+- **Findings exist**: propose `--request-changes`
+
+Format:
+
+```bash
+# Approve
+gh pr review PR --approve --body "Looks great!" --repo OWNER/REPO
+
+# or Request changes
+gh pr review PR --request-changes --body "Left a few suggestions — take a look when you get a chance." --repo OWNER/REPO
+```
+
+Present both the inline comments (Step 7) and the review decision (Step 8) together so the user can approve both in one go.
+
 ## Output Format
 
 Always end with a clear verdict:
 
 - **PASS**: Output `<PASS>` followed by "Review passed — no actionable findings."
 - **FINDINGS**: Show the validated findings, then: "Review found N issue(s) requiring attention."
+
+In interactive mode, the verdict comes after the proposed commands (Steps 7-8), not before them.
 
 ## Rules
 
@@ -138,3 +188,4 @@ Always end with a clear verdict:
 - Do NOT modify findings. Pass them through unchanged.
 - Report deterministic check failures immediately via `<HALT>` without proceeding to LLM review.
 - Keep your own commentary minimal — let the findings speak for themselves.
+- Steps 7-8 are ONLY for interactive use. When invoked by scripts or autonomously, stop after Step 6.
