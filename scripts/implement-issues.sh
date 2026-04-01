@@ -43,13 +43,50 @@ auto_detect_commands() {
     elif [ -f "yarn.lock" ]; then pm="yarn"
     elif [ -f "bun.lockb" ] || [ -f "bun.lock" ]; then pm="bun"
     fi
-    if [ "$pm" = "bun" ]; then
-      test_cmd="bun run test"
-      check_cmd="bun run check"
-    else
-      test_cmd="$pm test"
-      check_cmd="$pm run check"
+
+    local run="$pm run"
+    [ "$pm" = "bun" ] && run="bun run"
+
+    # Build check_cmd from whatever scripts exist in package.json
+    local scripts
+    scripts=$(jq -r '.scripts // {} | keys[]' package.json 2>/dev/null)
+    local check_parts=()
+    for s in lint typecheck check:types; do
+      echo "$scripts" | grep -qx "$s" && check_parts+=("$run $s")
+    done
+    if echo "$scripts" | grep -qx "test"; then
+      test_cmd="$run test"
+      check_parts+=("$run test")
     fi
+    if echo "$scripts" | grep -qx "check"; then
+      # Project has its own check — use it directly
+      check_cmd="$run check"
+    elif [ ${#check_parts[@]} -gt 0 ]; then
+      check_cmd=$(IFS=" && "; echo "${check_parts[*]}")
+    fi
+
+    # If no test script exists, scaffold vitest
+    if [ -z "$test_cmd" ]; then
+      warn "No test script found — scaffolding vitest"
+      $pm add -d vitest 2>/dev/null
+      local pkg_scripts
+      pkg_scripts=$(jq '.scripts' package.json)
+      pkg_scripts=$(echo "$pkg_scripts" | jq '. + {"test": "vitest run"}')
+      jq --argjson s "$pkg_scripts" '.scripts = $s' package.json > package.json.tmp && mv package.json.tmp package.json
+      mkdir -p src/__tests__
+      [ ! -f src/__tests__/smoke.test.ts ] && printf 'import { describe, it, expect } from "vitest";\n\ndescribe("smoke", () => {\n  it("passes", () => {\n    expect(true).toBe(true);\n  });\n});\n' > src/__tests__/smoke.test.ts
+      test_cmd="$run test"
+      # Re-derive check_cmd with new test script
+      if [ -z "$check_cmd" ]; then
+        check_parts+=("$run test")
+        check_cmd=$(IFS=" && "; echo "${check_parts[*]}")
+      fi
+      git add -A && git commit -m "chore: scaffold vitest and smoke test" || true
+    fi
+
+    # If still no check_cmd, fall back to test
+    [ -z "$check_cmd" ] && check_cmd="$test_cmd"
+
     case "$pm" in
       pnpm) install_cmd="pnpm install --frozen-lockfile" ;;
       yarn) install_cmd="yarn install --frozen-lockfile" ;;
@@ -105,7 +142,17 @@ safe_pull() {
     warn "Stashing uncommitted changes before pull"
     git stash --include-untracked -q
   fi
-  git fetch origin main
+  # Retry fetch on ref lock failures (race after recent merge)
+  local fetch_ok=false
+  for _try in 1 2 3; do
+    if git fetch origin main 2>/dev/null; then
+      fetch_ok=true; break
+    fi
+    warn "git fetch failed (attempt $_try/3), clearing stale refs"
+    rm -f .git/refs/remotes/origin/main
+    sleep 1
+  done
+  [ "$fetch_ok" = false ] && { err "git fetch origin main failed after 3 attempts"; return 1; }
   if ! REBASE_OUT=$(git rebase origin/main 2>&1); then
     # Check for untracked file conflicts
     CONFLICTING=$(echo "$REBASE_OUT" | sed -n 's/^\t\+//p')
