@@ -50,7 +50,6 @@ cw review --branch feat/foo                 # review branch vs main
 
 ```bash
 cw implement --skip-plan          # implement directly, no planner
-cw implement --skip-refactor      # skip post-implementation deduplication
 cw implement --skip-review        # skip code review cycle
 ```
 
@@ -60,8 +59,7 @@ cw implement --skip-review        # skip code review cycle
 PRD.md → prd-qa → create-issues → implement → merged PRs
                                       │
                         per issue:    ├─ planner (test sequence)
-                                      ├─ implementor (TDD)
-                                      ├─ refactorer (dedup)
+                                      ├─ implementor (TDD) → refactorer (dedup)
                                       ├─ ci-fixer (up to 3 retries)
                                       ├─ code-reviewer → review-judge
                                       └─ squash merge
@@ -71,7 +69,7 @@ PRD.md → prd-qa → create-issues → implement → merged PRs
 
 **Issue creation** explores the codebase, then decomposes the PRD into vertical-slice issues — each crossing all layers (DB → server → client → UI) with acceptance criteria, test plan, and implementation hints.
 
-**Implementation** processes issues in dependency order, parallelizing independent ones via git worktrees. Each issue gets: planning, TDD, refactoring, CI fixes, code review, then merge.
+**Implementation** processes issues in dependency order, parallelizing independent ones via git worktrees. Each issue gets: planning, TDD + refactoring, CI fixes, code review, then merge.
 
 ### Phase-aware PRDs
 
@@ -88,7 +86,7 @@ Orchestrator agents work identically in Claude Code / OpenCode for human-in-the-
 
 | Orchestrator | Does | Script equivalent |
 |---|---|---|
-| `implementation-orchestrator` | Plan → implement (TDD) | `cw implement` (per issue) |
+| `implementation-orchestrator` | Plan → implement (TDD) → refactor | `cw implement` (per issue) |
 | `review-orchestrator` | Checks → reviewer → judge | `cw review` |
 | `prd-orchestrator` | Critic → architect → integrator | `cw prd-qa` |
 | `issue-creation-orchestrator` | Validate PRD → create issues | `cw create-issues` |

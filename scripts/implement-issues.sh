@@ -105,13 +105,11 @@ auto_detect_commands
 # --- Skip flags ---
 SKIP_PLAN=false
 SKIP_REVIEW=false
-SKIP_REFACTOR=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --skip-plan)    SKIP_PLAN=true; shift ;;
     --skip-review)  SKIP_REVIEW=true; shift ;;
-    --skip-refactor) SKIP_REFACTOR=true; shift ;;
     *) err "unknown flag: $1"; exit 1 ;;
   esac
 done
@@ -296,27 +294,6 @@ CONSTRAINTS:
         echo "failure no-pr-created" > "$status_file"
         exit 1
       fi
-    fi
-
-    # --- Refactorer (cross-codebase deduplication) ---
-    if [ "$SKIP_REFACTOR" = true ]; then
-      progress "#$issue_num — skipping refactor"
-    else
-      progress "#$issue_num — refactoring pass"
-      git checkout "$branch" 2>/dev/null || true
-
-      REFACTOR_PROMPT="You are on branch $branch. A new feature was just implemented for issue #$issue_num: $issue_title.
-
-Review the code added in this branch (use git diff main...$branch) and compare with the rest of the codebase.
-
-RULES:
-- Only refactor if there's a clear win (2+ duplicated blocks, or a pattern used 3+ times).
-- Run \`$CHECK_CMD\` after any refactoring.
-- Commit and push changes if you made any.
-- If no refactoring is needed, just say so and exit."
-
-      REFACTOR_TMPFILE=$(run_agent "refactorer" "$REFACTOR_PROMPT")
-      rm -f "$REFACTOR_TMPFILE"
     fi
 
     # --- CI + code review in parallel ---

@@ -39,7 +39,6 @@ Commands:
                           Plan → TDD → CI → code review → merge, in dependency order.
                           Parallelizes independent issues via git worktrees.
     --skip-plan           Skip planner agent, implement directly.
-    --skip-refactor       Skip refactorer pass after implementation.
     --skip-review         Skip code review + review-fix cycle.
 
   continue ["<desc>"]     Continue work on an existing project.
@@ -66,7 +65,7 @@ Environment variables:
   MAX_PARALLEL      Concurrent issues    (default: 1)
 
 Orchestrators (use as your agent in Claude Code / opencode):
-  implementation-orchestrator    Plan → implement (TDD)
+  implementation-orchestrator    Plan → implement (TDD) → refactor
   review-orchestrator            Deterministic checks → review → judge
   prd-orchestrator               Critic → architect → integrator loop
   issue-creation-orchestrator    Validate PRD → create GitHub issues

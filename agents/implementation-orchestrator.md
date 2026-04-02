@@ -15,7 +15,7 @@ description: >
 skills:
   - tdd
 tools:
-  - Agent(planner, implementor)
+  - Agent(planner, implementor, refactorer)
   - Bash
   - Glob
   - Grep
@@ -130,7 +130,25 @@ CONSTRAINTS:
 
 Wait for the result.
 
-### Step 6: Report
+### Step 6: Spawn refactorer
+
+If the implementor succeeded (no `<HALT>`), launch the `refactorer` agent as a subagent:
+
+```
+You are on branch <branch>. A new feature was just implemented for issue <issue ref>: <title>.
+
+Review the code added in this branch (use git diff main...HEAD) and compare with the rest of the codebase.
+
+RULES:
+- Only refactor if there's a clear win (2+ duplicated blocks, or a pattern used 3+ times).
+- Run `<CHECK_CMD>` after any refactoring.
+- Commit and push changes if you made any.
+- If no refactoring is needed, just say so and exit.
+```
+
+Wait for the result.
+
+### Step 7: Report
 
 - If the implementor output contains `<HALT>` → report the blocker to the user, then emit:
   ```
