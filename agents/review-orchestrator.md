@@ -111,7 +111,7 @@ Wait for the result.
 
 ### Step 4: Evaluate reviewer output
 
-- If the code-reviewer output contains `<PASS>` or "no issues found" → report **PASS** to the user and stop.
+- If the code-reviewer output contains `<PASS>` or "no issues found" → mark result as **PASS** and skip to Step 7.
 - Otherwise, extract the FINDINGS and proceed to Step 5.
 
 ### Step 5: Spawn review-judge
@@ -128,8 +128,10 @@ Wait for the result.
 
 ### Step 6: Report
 
-- If the review-judge output contains `<PASS>` → report **PASS** (judge filtered all findings).
+- If the review-judge output contains `<PASS>` → mark result as **PASS** (judge filtered all findings).
 - Otherwise, report the validated findings to the user in full.
+
+In both cases, proceed to Step 7.
 
 ### Step 7: Propose PR Comments (interactive only)
 
