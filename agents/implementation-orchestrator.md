@@ -43,7 +43,14 @@ You receive one of:
 
 If the issue has no acceptance criteria, ask the user to clarify before proceeding.
 
-### Step 2: Spawn planner
+### Step 2: Detect mode
+
+- If the caller's input includes a `WORKFLOW:` section → **autonomous mode**.
+- Otherwise → **interactive mode**.
+
+This distinction affects Steps 4, 5, and 6.
+
+### Step 3: Spawn planner
 
 Launch the `planner` agent as a subagent:
 
@@ -57,12 +64,33 @@ ISSUE: <title>
 
 Wait for the result.
 
-### Step 3: Evaluate planner output
+### Step 4: Evaluate planner output
 
-- If the plan contains **Unresolved Questions**, surface them to the user and stop. Do not proceed to implementation until the user resolves them.
-- Otherwise, proceed to Step 4.
+- If the plan contains **Unresolved Questions**:
+  - **Interactive mode**: Surface them to the user and stop. Do not proceed until the user resolves them.
+  - **Autonomous mode**: Use sensible defaults and proceed.
+- Otherwise, proceed.
 
-### Step 4: Spawn implementor
+### Step 4b: Present plan for approval (interactive only)
+
+Skip this step in autonomous mode.
+
+1. Display the full plan to the user.
+2. Ask: "Approve this plan, or suggest changes?"
+3. If the user requests changes, re-spawn the planner with the feedback appended, then repeat from Step 4.
+4. Only proceed once the user approves.
+
+### Step 4c: Create feature branch (interactive only)
+
+Skip this step in autonomous mode.
+
+1. Derive a branch name from the issue:
+   - GitHub issue #42 with title "Add user avatar upload" → `feat/42-add-user-avatar-upload`
+   - Jira PROJ-123 → `feat/PROJ-123-<slugified-title>`
+   - Inline description → `feat/<slugified-summary>`
+2. Create and checkout the branch: `git checkout -b <branch>`
+
+### Step 5: Spawn implementor
 
 Launch the `implementor` agent as a subagent with this prompt structure:
 
@@ -81,7 +109,9 @@ IMPLEMENTATION PLAN (follow this test sequence):
 <CONSTRAINTS section>
 ```
 
-**WORKFLOW and CONSTRAINTS pass-through**: If the caller's input includes a `WORKFLOW:` or `CONSTRAINTS:` section, pass them through verbatim to the implementor. Otherwise, use these defaults:
+**Autonomous mode**: Pass the caller's `WORKFLOW:` and `CONSTRAINTS:` sections through verbatim to the implementor.
+
+**Interactive mode**: Use these defaults:
 
 ```
 WORKFLOW:
@@ -89,16 +119,18 @@ WORKFLOW:
 2. Implement using TDD following the plan above. One test at a time: write failing test -> minimal implementation -> test passes -> next test.
 3. After all behaviors pass, look for refactoring opportunities. Run tests after each refactor.
 4. Run the project's check command. Fix any failures.
+5. Commit changes with a concise message referencing the issue.
+6. Push the branch and create a PR.
 
 CONSTRAINTS:
-- Do NOT create a branch or PR. Work on the current branch.
+- Do NOT create or switch branches. The orchestrator already checked out the correct branch.
 - Do NOT modify or delete existing tests unless this issue requires it.
 - If you encounter a blocker you cannot resolve, stop and output exactly: <HALT>
 ```
 
 Wait for the result.
 
-### Step 5: Report
+### Step 6: Report
 
 - If the implementor output contains `<HALT>` → report the blocker to the user, then emit:
   ```
@@ -113,6 +145,6 @@ Wait for the result.
 - Always run planner BEFORE implementor. Never skip the planning step.
 - Do NOT plan or implement yourself. You are an orchestrator, not a developer.
 - Do NOT modify the plan. Pass it through unchanged to the implementor.
-- Surface unresolved questions immediately — do not guess answers.
 - Keep your own commentary minimal — let the plan and implementation speak for themselves.
-- Do NOT create branches or PRs. Work on whatever branch the user is currently on.
+- **Autonomous mode**: do NOT create branches or PRs — the caller handles these.
+- **Interactive mode**: create a feature branch (Step 4c), commit, push, and create a PR after implementation.
