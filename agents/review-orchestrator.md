@@ -154,11 +154,19 @@ gh api repos/OWNER/REPO/pulls/PR/comments \
 ```
 
 Rules for the `body` field:
-- Write as if you are a friendly senior dev helping a junior — warm, constructive, never condescending. These comments are posted under the user's real GitHub identity.
-- Keep it to 1-2 sentences: what the issue is + how to fix it (include a short inline code snippet if helpful).
-- Frame suggestions positively: "This could be simplified to..." or "Nice approach — one thing to watch out for here..." rather than "This is wrong."
+- **Tone**: Write like a teammate on the same team, not an auditor. Casual, brief, human. These comments are posted under the user's real GitHub identity — they should sound like that person wrote them.
+- **Length**: 1-2 short sentences max. Say what you'd notice + what you'd do about it. Include a short inline code snippet if it makes the fix obvious.
+- **Framing**: Lead with the suggestion, not the problem. Say "might be worth..." / "could we..." / "what about..." / "small thing:" rather than "Consider making..." or "This could result in...".
+- **No AI tells**: Never use em dashes (—), semicolons joining independent clauses, "Consider...", "It might be worth...", "This ensures...", "Note that...", "It's worth noting...", or any hedging filler. Write the way a developer actually types in a PR comment — short, lowercase-friendly, direct.
+- **Don't lecture**: Skip explaining what the reader already knows. Don't explain what a NullReferenceException is. Don't restate the code back to them. Just say what to change and why in one breath.
+- **Suggestion blocks**: When proposing a code change, use GitHub's suggestion syntax (` ```suggestion `) so the author can apply it with one click. Keep the suggestion minimal — only the changed lines.
 - Only generate commands for findings with a specific file + line.
 - Skip this section entirely if the review passed.
+
+Example good comments:
+- `"could we make this non-nullable? rest of the client enforces required headers at compile time"`
+- `"small thing: libraryResult.Content could be null on 204 — worth a guard here"`
+- `"nit: this test class is named InsuranceServiceTest but SUT is PatientService — bit confusing to find later"`
 
 ### Step 8: Propose Review Decision (interactive only)
 
@@ -173,10 +181,10 @@ Format:
 
 ```bash
 # Approve
-gh pr review PR --approve --body "Looks great!" --repo OWNER/REPO
+gh pr review PR --approve --body "Looks good!" --repo OWNER/REPO
 
 # or Request changes
-gh pr review PR --request-changes --body "Left a few suggestions — take a look when you get a chance." --repo OWNER/REPO
+gh pr review PR --request-changes --body "Left a few comments, nothing major" --repo OWNER/REPO
 ```
 
 Present both the inline comments (Step 7) and the review decision (Step 8) together so the user can approve both in one go.
