@@ -37,6 +37,13 @@ If no input is given, review the current branch's diff against main.
 
 ## Process
 
+### Step 0: Detect mode
+
+- If the caller's input includes `MODE: autonomous` → **autonomous mode**.
+- Otherwise → **interactive mode**.
+
+This distinction affects Steps 7 and 8.
+
 ### Step 1: Get the diff
 
 - **PR number**: Run `gh pr diff <number>` via Bash.
@@ -124,9 +131,9 @@ Wait for the result.
 - If the review-judge output contains `<PASS>` → report **PASS** (judge filtered all findings).
 - Otherwise, report the validated findings to the user in full.
 
-### Step 7: Propose PR Comments (interactive mode only)
+### Step 7: Propose PR Comments (interactive only)
 
-Skip this step entirely if running autonomously (invoked by a script or as part of `cw implement`).
+Skip this step in autonomous mode.
 
 If findings were reported AND a PR number + repo are known, generate a **Proposed PR Comments** section with ready-to-run `gh api` commands — one per finding. Do NOT run them. Present for user approval first.
 
@@ -151,9 +158,9 @@ Rules for the `body` field:
 - Only generate commands for findings with a specific file + line.
 - Skip this section entirely if the review passed.
 
-### Step 8: Propose Review Decision (interactive mode only)
+### Step 8: Propose Review Decision (interactive only)
 
-Skip this step entirely if running autonomously.
+Skip this step in autonomous mode.
 
 After Step 7 (or directly after Step 6 if the review passed), propose the `gh pr review` command for the user to approve before running.
 
@@ -188,4 +195,5 @@ In interactive mode, the verdict comes after the proposed commands (Steps 7-8), 
 - Do NOT modify findings. Pass them through unchanged.
 - Report deterministic check failures immediately via `<HALT>` without proceeding to LLM review.
 - Keep your own commentary minimal — let the findings speak for themselves.
-- Steps 7-8 are ONLY for interactive use. When invoked by scripts or autonomously, stop after Step 6.
+- **Autonomous mode** (`MODE: autonomous`): stop after Step 6. Do not propose PR comments or review decisions.
+- **Interactive mode**: run Steps 7-8 to propose PR comments and review decision for user approval.

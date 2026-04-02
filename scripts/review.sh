@@ -79,6 +79,10 @@ Context: $REVIEW_CONTEXT"
     ;;
 esac
 
+PROMPT="$PROMPT
+
+MODE: autonomous"
+
 [ "$SKIP_CHECKS" = "1" ] && PROMPT="$PROMPT
 
 Skip deterministic checks."
