@@ -116,7 +116,6 @@ done
 
 # --- Configuration ---
 DEFAULT_RETRIES="${DEFAULT_RETRIES:-3}"
-CI_FIX_RETRIES="${CI_FIX_RETRIES:-$DEFAULT_RETRIES}"
 MAX_PARALLEL="${MAX_PARALLEL:-1}"
 MERGE_RETRIES="${MERGE_RETRIES:-$DEFAULT_RETRIES}"
 
@@ -296,35 +295,10 @@ CONSTRAINTS:
       fi
     fi
 
-    # --- CI + code review in parallel ---
-    progress "#$issue_num — PR #$PR_NUM created, CI + review in parallel"
+    # --- Code review ---
+    progress "#$issue_num — PR #$PR_NUM created"
     git checkout "$branch" 2>/dev/null || true
 
-    # Start CI watch in background
-    CI_STATUS_FILE="/tmp/cw-ci-status-$issue_num"
-    rm -f "$CI_STATUS_FILE"
-    (
-      CI_FIX_PROMPT="Fix CI failures on branch $branch for issue #$issue_num: $issue_title.
-
-Issue context:
-$issue_body
-
-Max retries: $CI_FIX_RETRIES"
-
-      CI_TMPFILE=$(run_agent "ci-fix-orchestrator" "$CI_FIX_PROMPT")
-
-      if check_signal "$CI_TMPFILE" "$HALT_FLAG"; then
-        RUN_ID=$(extract_halt_field "$CI_TMPFILE" "RUN_ID")
-        echo "failure $RUN_ID" > "$CI_STATUS_FILE"
-      else
-        RUN_ID=$(gh run list --branch "$branch" --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || echo "")
-        echo "success $RUN_ID" > "$CI_STATUS_FILE"
-      fi
-      rm -f "$CI_TMPFILE"
-    ) &
-    CI_PID=$!
-
-    # Single-pass review (no re-review cycles)
     if [ "$SKIP_REVIEW" = true ]; then
       progress "#$issue_num — skipping review"
     else
@@ -347,26 +321,7 @@ RULES:
       }
     fi
 
-    # Wait for CI to finish (may already be done)
-    wait "$CI_PID" 2>/dev/null || true
-
-    if [ ! -f "$CI_STATUS_FILE" ] || grep -q "^failure" "$CI_STATUS_FILE"; then
-      RUN_ID=$(awk '{print $2}' "$CI_STATUS_FILE" 2>/dev/null || echo "")
-      progress "${S_FAIL} #$issue_num — CI failed after $CI_FIX_RETRIES attempts"
-      CI_LOGS=""
-      [ -n "$RUN_ID" ] && CI_LOGS=$(gh run view "$RUN_ID" --log-failed 2>/dev/null | tail -100 || echo "(logs unavailable)")
-      capture_failure "$issue_num" "$branch" "ci-failed-after-$CI_FIX_RETRIES-attempts" \
-        "## CI Logs (last 100 lines)
-\`\`\`
-${CI_LOGS:-(logs unavailable)}
-\`\`\`"
-      rm -f "$CI_STATUS_FILE"
-      echo "failure ci-failed-after-$CI_FIX_RETRIES-attempts" > "$status_file"
-      exit 1
-    fi
-
-    rm -f "$CI_STATUS_FILE"
-    progress "#$issue_num — CI + review passed"
+    progress "#$issue_num — review passed"
 
     progress "#$issue_num — ready to merge (PR #$PR_NUM)"
     echo "success $PR_NUM" > "$status_file"

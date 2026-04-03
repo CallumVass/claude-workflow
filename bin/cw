@@ -61,7 +61,6 @@ Environment variables:
   TEST_CMD          Test command         (auto-detected from project files)
   CHECK_CMD         Full CI check        (auto-detected from project files)
   INSTALL_CMD       Dependency install   (auto-detected from project files)
-  CI_FIX_RETRIES    CI fix attempts      (default: 3)
   MAX_PARALLEL      Concurrent issues    (default: 1)
 
 Orchestrators (use as your agent in Claude Code / opencode):
@@ -69,11 +68,10 @@ Orchestrators (use as your agent in Claude Code / opencode):
   review-orchestrator            Deterministic checks → review → judge
   prd-orchestrator               Critic → architect → integrator loop
   issue-creation-orchestrator    Validate PRD → create GitHub issues
-  ci-fix-orchestrator            Diagnose → fix → verify CI
 
 Agents (usable standalone via: claude --agent <name>):
   planner, implementor, refactorer,
-  code-reviewer, review-judge, ci-fixer, issue-creator,
+  code-reviewer, review-judge, issue-creator,
   single-issue-creator, prd-integrator, prd-critic, prd-architect
 
 All commands run in the current working directory.
@@ -107,7 +105,7 @@ check_placeholders() {
 
 # Agents invoked directly by scripts (top-level in opencode).
 # All others are subagent-only.
-TOPLEVEL_AGENTS="single-issue-creator issue-creation-orchestrator prd-orchestrator review-orchestrator implementation-orchestrator ci-fix-orchestrator implementor"
+TOPLEVEL_AGENTS="single-issue-creator issue-creation-orchestrator prd-orchestrator review-orchestrator implementation-orchestrator implementor"
 
 # Convert a Claude agent .md to OpenCode format.
 # Strips name/skills/tools from frontmatter, sets mode based on top-level list.

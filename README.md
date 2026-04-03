@@ -60,7 +60,6 @@ PRD.md → prd-qa → create-issues → implement → merged PRs
                                       │
                         per issue:    ├─ planner (test sequence)
                                       ├─ implementor (TDD) → refactorer (dedup)
-                                      ├─ ci-fixer (up to 3 retries)
                                       ├─ code-reviewer → review-judge
                                       └─ squash merge
 ```
@@ -69,7 +68,7 @@ PRD.md → prd-qa → create-issues → implement → merged PRs
 
 **Issue creation** explores the codebase, then decomposes the PRD into vertical-slice issues — each crossing all layers (DB → server → client → UI) with acceptance criteria, test plan, and implementation hints.
 
-**Implementation** processes issues in dependency order, parallelizing independent ones via git worktrees. Each issue gets: planning, TDD + refactoring, CI fixes, code review, then merge.
+**Implementation** processes issues in dependency order, parallelizing independent ones via git worktrees. Each issue gets: planning, TDD + refactoring, code review, then merge.
 
 ### Phase-aware PRDs
 
@@ -90,7 +89,7 @@ Orchestrator agents work identically in Claude Code / OpenCode for human-in-the-
 | `review-orchestrator` | Checks → reviewer → judge | `cw review` |
 | `prd-orchestrator` | Critic → architect → integrator | `cw prd-qa` |
 | `issue-creation-orchestrator` | Validate PRD → create issues | `cw create-issues` |
-| `ci-fix-orchestrator` | Diagnose → fix → verify CI | CI step in `cw implement` |
+
 
 Scripts add automation glue (worktrees, parallelism, retries, merge). Orchestrators own the workflow logic.
 
@@ -103,7 +102,6 @@ Scripts add automation glue (worktrees, parallelism, retries, merge). Orchestrat
 | `TEST_CMD` | *(auto-detected)* | Test command |
 | `CHECK_CMD` | *(auto-detected)* | Full CI check |
 | `INSTALL_CMD` | *(auto-detected)* | Dependency install |
-| `CI_FIX_RETRIES` | `3` | CI fix attempts per failure |
 | `MAX_PARALLEL` | `1` | Concurrent issue implementations |
 
 Commands auto-detect from project files (`package.json` → bun/npm/pnpm/yarn, `mix.exs` → mix, `Cargo.toml` → cargo, `go.mod` → go, `pyproject.toml` → pytest/ruff, `*.csproj` → dotnet). Override with env vars: `CHECK_CMD="mix precommit" cw implement`.
