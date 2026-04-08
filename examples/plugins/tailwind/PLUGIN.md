@@ -4,6 +4,7 @@ description: Review checks for Tailwind CSS v4 usage, design tokens, and compone
 triggers:
   files: ["*.tsx", "*.jsx", "*.css"]
   content: ["className=", "cn(", "cva(", "@apply", "@theme", "tailwind", "tailwind-merge", "clsx"]
+stages: [review]
 ---
 
 ## Additional Review Checks

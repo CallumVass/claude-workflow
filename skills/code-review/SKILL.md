@@ -82,7 +82,7 @@ Guidelines:
 
 ### Finding 1
 - **Confidence**: [85-100]
-- **Severity**: [critical | low]
+- **Severity**: [critical | major | minor | nit]
 - **Category**: [Logic | Security | Error Handling | Performance | Test Quality]
 - **File**: path/to/file.ts:42
 - **Code**: `the problematic code`

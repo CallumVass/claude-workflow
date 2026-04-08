@@ -83,6 +83,10 @@ Copy Stitch Tailwind classes verbatim — do NOT translate to inline styles (los
 - <anything ambiguous in the issue or codebase that the implementor should clarify before starting>
 ```
 
+## Domain Plugins
+
+If the orchestrator specifies domain plugins in your prompt (via a `Domain plugins detected:` trailer), read each plugin's `PLUGIN.md` from `<cwd>/.claude-workflow/plugins/<name>/PLUGIN.md` and incorporate its guidance into your plan — framework-specific test strategies, routing conventions, or "test X before Y" ordering that the implementor should follow. Only consult a plugin's `references/` directory when a specific decision needs deeper context.
+
 ## Rules
 
 - **Hard cap: 12 test entries per issue.** If you're listing more, you're over-testing — group related guards into single entries and drop trivial variations.
@@ -95,3 +99,4 @@ Copy Stitch Tailwind classes verbatim — do NOT translate to inline styles (los
 - **Use existing test file conventions.** Match the project's test file naming and location patterns.
 - **Concise.** The implementor will figure out assertions and test code — just name the behavior and the file.
 - **No code.** Do not write test code, implementation code, or pseudocode.
+- **Drop structural criteria from the test plan.** If an acceptance criterion describes code organisation rather than behaviour — import patterns, file sizes, module boundaries, "no references to X remain" — it is NOT a test entry. Structural criteria are verified once by the implementor with `grep`/`find` before committing. Only behavioural criteria (observable through public interfaces) become test plan entries.

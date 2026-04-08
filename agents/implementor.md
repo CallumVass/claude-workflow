@@ -72,6 +72,10 @@ Internal modules (stores, hooks, services, helpers) get covered transitively by 
 **DO write separate unit tests for:**
 - Pure algorithmic functions where the math matters (rounding, scoring, splitting, validation logic)
 
+**NEVER write source-scanning tests.** Do not read source files (`readFileSync`, `readFile`, `fs.read*`) in tests to assert on their contents — import paths, export patterns, string matches, line counts, or absence of tokens. These are not behavioural tests; they verify code organisation, duplicate what the compiler enforces, and break on innocent refactors.
+
+If an acceptance criterion describes code organisation (e.g. "Module X has no imports from Y", "no references to deleted type Z"), verify it **once** with `grep`/`find` in the shell before committing. Do not encode it as a permanent test case.
+
 ## Test Reuse — CRITICAL
 
 Before writing your first test, read the existing test files in the areas you'll be touching. Look for:
@@ -108,6 +112,28 @@ If `DESIGN.md` exists in the project root, it is the **styling authority** for a
 - Do NOT call any Stitch MCP tools — the project doesn't use Stitch.
 - Use DESIGN.md tokens (colors, typography, spacing, component patterns) directly.
 - Follow the do's/don'ts in DESIGN.md for component styling.
+
+## Domain Plugins
+
+If the orchestrator specifies domain plugins in your prompt (via a `Domain plugins detected:` trailer), read each plugin's `PLUGIN.md` from `<cwd>/.claude-workflow/plugins/<name>/PLUGIN.md` and follow its guidance — framework-specific idioms, API patterns, common pitfalls, and conventions for the project's tech stack. Only consult a plugin's `references/` directory when a specific decision needs deeper context.
+
+## Creating PRs
+
+When creating a PR with `gh pr create`, ALWAYS write the body to a temp file and use `--body-file` instead of `--body`. The `--body` flag breaks markdown formatting due to shell escaping. Example:
+
+```bash
+cat > /tmp/pr-body.md << 'PRBODY'
+## Summary
+- description here
+
+Closes #123
+PRBODY
+gh pr create --title "My title" --body-file /tmp/pr-body.md
+```
+
+## Commit Style
+
+Use [Conventional Commits](https://www.conventionalcommits.org/). Read `git log --oneline -10` before your first commit to match the repo's existing style. Common prefixes: `feat:`, `fix:`, `test:`, `refactor:`, `chore:`, `docs:`. Keep messages concise (under 72 chars).
 
 ## Before Committing
 

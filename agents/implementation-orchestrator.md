@@ -14,8 +14,9 @@ description: >
   </example>
 skills:
   - tdd
+  - plugins
 tools:
-  - Agent(planner, implementor, refactorer)
+  - Agent(planner, architecture-reviewer, implementor, refactorer)
   - Bash
   - Glob
   - Grep
@@ -50,9 +51,29 @@ If the issue has no acceptance criteria, ask the user to clarify before proceedi
 
 This distinction affects Steps 4, 5, and 6.
 
+### Step 2.5: Detect domain plugins
+
+Using the `plugins` skill, scan `<cwd>/.claude-workflow/plugins/*/PLUGIN.md`. For each plugin, read its frontmatter and check whether:
+
+1. **files**: At least one file in the project matches any of the plugin's file glob patterns.
+2. **content**: At least one of the plugin's content strings appears in the codebase.
+3. **stages**: The plugin's `stages` array includes the stages this pipeline runs (`plan`, `implement`, `refactor`). Default to `[review]` if the field is missing.
+
+Collect matched plugins into three sets by stage: `planPlugins`, `implementPlugins`, `refactorPlugins`. A plugin can appear in multiple sets if its `stages` lists multiple.
+
+If no plugins match any stage, proceed with core skills only. Otherwise log which were detected per stage (e.g., "Detected: plan=[tailwind], implement=[tailwind, prisma], refactor=[]").
+
+Pass the relevant set to each subagent in Steps 3, 5, and 6 using this trailer format (omit the trailer entirely when the set for that stage is empty):
+
+```
+Domain plugins detected: [comma-separated plugin directory names]
+For each plugin, read `<cwd>/.claude-workflow/plugins/<name>/PLUGIN.md` and apply its additional guidance.
+If you need deeper context, consult files in `<cwd>/.claude-workflow/plugins/<name>/references/`.
+```
+
 ### Step 3: Spawn planner
 
-Launch the `planner` agent as a subagent:
+Launch the `planner` agent as a subagent. Append the `planPlugins` trailer from Step 2.5 to the prompt if that set is non-empty:
 
 ```
 Plan the implementation for this issue by producing a sequenced list of test cases.
@@ -60,6 +81,8 @@ Plan the implementation for this issue by producing a sequenced list of test cas
 ISSUE: <title>
 
 <issue body>
+
+<planPlugins trailer, if any>
 ```
 
 Wait for the result.
@@ -71,11 +94,36 @@ Wait for the result.
   - **Autonomous mode**: Use sensible defaults and proceed.
 - Otherwise, proceed.
 
+### Step 4a: Architecture critique
+
+Launch the `architecture-reviewer` agent as a subagent in Plan Critique Mode:
+
+```
+Review this implementation plan against the existing codebase. Focus ONLY on what the plan touches — this is not a full architecture audit.
+
+ISSUE CONTEXT:
+<issue>
+
+IMPLEMENTATION PLAN:
+<plan from planner>
+
+Look for:
+- Existing shared utilities or patterns in the codebase the plan should reuse instead of creating new ones
+- Modules the plan would push over 300 lines
+- Duplication the plan would create across packages
+- Type safety concerns (any escape hatches, missing interfaces)
+- Opportunities to use or extend existing shared abstractions
+
+Present numbered recommendations in candidate format. If the plan already follows good patterns, say "No architectural recommendations" and stop.
+```
+
+If the reviewer returns candidates, append them to the plan as an `### Architectural Notes` section. If it returns "No architectural recommendations", leave the plan unchanged. This step is fail-open — do not block the pipeline on critique failure.
+
 ### Step 4b: Present plan for approval (interactive only)
 
 Skip this step in autonomous mode.
 
-1. Display the full plan to the user.
+1. Display the full plan (including any Architectural Notes from Step 4a) to the user.
 2. Ask: "Approve this plan, or suggest changes?"
 3. If the user requests changes, re-spawn the planner with the feedback appended, then repeat from Step 4.
 4. Only proceed once the user approves.
@@ -128,11 +176,13 @@ CONSTRAINTS:
 - If you encounter a blocker you cannot resolve, stop and output exactly: <HALT>
 ```
 
+Append the `implementPlugins` trailer from Step 2.5 to the implementor prompt if that set is non-empty.
+
 Wait for the result.
 
 ### Step 6: Spawn refactorer
 
-If the implementor succeeded (no `<HALT>`), launch the `refactorer` agent as a subagent:
+If the implementor succeeded (no `<HALT>`), launch the `refactorer` agent as a subagent. Append the `refactorPlugins` trailer from Step 2.5 if that set is non-empty:
 
 ```
 You are on branch <branch>. A new feature was just implemented for issue <issue ref>: <title>.
@@ -144,6 +194,8 @@ RULES:
 - Run `<CHECK_CMD>` after any refactoring.
 - Commit and push changes if you made any.
 - If no refactoring is needed, just say so and exit.
+
+<refactorPlugins trailer, if any>
 ```
 
 Wait for the result.

@@ -13,7 +13,7 @@ description: >
   </example>
 skills:
   - code-review
-  - review-plugins
+  - plugins
 tools:
   - Agent(code-reviewer, review-judge)
   - Bash
@@ -82,12 +82,13 @@ Skip this step if the user passes `--skip-checks` or specifies "skip determinist
 
 ### Step 2.5: Detect domain plugins
 
-Using the `review-plugins` skill as a guide, scan plugin subdirectories listed in its "Available Plugins" table. For each plugin, read its `PLUGIN.md` frontmatter and check whether the diff matches:
+Using the `plugins` skill, scan `<cwd>/.claude-workflow/plugins/*/PLUGIN.md`. For each plugin, read its frontmatter and check whether:
 
 1. **files**: At least one changed file in the diff matches any of the plugin's file glob patterns.
 2. **content**: At least one of the plugin's content strings appears anywhere in the diff text.
+3. **stages**: The plugin's `stages` array includes `review` (default to `[review]` if the field is missing).
 
-Both conditions must be true for a plugin to match. Collect the directory names of all matching plugins.
+All three conditions must be true for a plugin to match. Collect the directory names of all matching plugins.
 
 If no plugins match, proceed with core skills only. If plugins match, log which were detected (e.g., "Detected domain plugins: tailwind") and pass the list to code-reviewer in Step 3.
 
@@ -101,8 +102,8 @@ Review the following diff for [context]:
 <the diff>
 
 Domain plugins detected: [list of plugin directory names]
-For each plugin, read `skills/review-plugins/<name>/PLUGIN.md` and apply its additional checks.
-If a finding needs deeper context, consult files in `skills/review-plugins/<name>/references/`.
+For each plugin, read `<cwd>/.claude-workflow/plugins/<name>/PLUGIN.md` and apply its additional checks.
+If a finding needs deeper context, consult files in `<cwd>/.claude-workflow/plugins/<name>/references/`.
 ```
 
 If no plugins were detected, omit the domain plugins section.
