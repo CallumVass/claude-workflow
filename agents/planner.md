@@ -35,9 +35,10 @@ You do NOT write code. You do NOT create or modify files. You only output a plan
    - If the issue references a **Stitch project ID**: Load the `stitch` skill (run `/stitch`). Call `list_screens` to discover available screens. For each route/component this issue touches, find the matching screen and record its ID. Note missing screens the implementor must generate. **Include these as concrete steps in the Design Reference section** — the implementor will not fetch screens unless you tell it exactly which ones to fetch.
    - If `DESIGN.md` exists but **no Stitch project ID**: The implementor uses DESIGN.md tokens directly. No screen fetching needed.
    - If **neither exists**: Skip this step entirely.
-5. **Identify behaviors**: Break acceptance criteria into the smallest testable behaviors.
-6. **Sequence by dependency**: Order behaviors so foundational ones come first. Later tests can build on earlier ones.
-7. **Output the plan**.
+5. **Choose the owning boundary**: Identify the single feature or domain folder that should own this slice. If no suitable boundary exists, propose a new boundary folder and its public `index.ts`. If the issue would need multiple owning boundaries, call that out as overscoped.
+6. **Identify behaviors**: Break acceptance criteria into the smallest testable behaviors.
+7. **Sequence by dependency**: Order behaviors so foundational ones come first. Later tests can build on earlier ones.
+8. **Output the plan**.
 
 ## Output Format
 
@@ -46,6 +47,14 @@ You do NOT write code. You do NOT create or modify files. You only output a plan
 
 ### Context
 <1-3 sentences: what exists today, what the issue changes>
+
+### Structural Plan
+- Owning boundary: `<path/to/feature-or-domain/>`
+- Public entry point: `<path/to/feature-or-domain/index.ts>`
+- Files likely in scope:
+  - `<path/to/file>`
+- Avoid:
+  - `<new root files, catch-all folders, cross-feature internal imports, or other drift to avoid>`
 
 ### Boundary Tests
 
@@ -89,6 +98,10 @@ If the orchestrator specifies domain plugins in your prompt (via a `Domain plugi
 
 ## Rules
 
+- **Name one owning boundary.** Every plan must identify one owning feature or domain folder. If you cannot do that cleanly, the issue is probably too broad.
+- **Prefer existing boundaries.** Extend an existing feature or domain folder before proposing a new one.
+- **No junk-drawer placements.** Do not propose `utils/`, `helpers/`, `misc/`, or `lib/` as the home for slice-specific code.
+- **No flat-root growth.** Do not place new production files in a flat package root unless the file is a package entry point.
 - **Hard cap: 12 test entries per issue.** If you're listing more, you're over-testing — group related guards into single entries and drop trivial variations.
 - **First test must be a trigger test.** This test proves the slice is wired: it starts from the user's entry point (API call, route render) and asserts the expected output at the other end. If the issue's test plan includes a "Trigger" test, plan it first. If the issue's test plan lacks one, add it — a slice without a trigger test can pass all tests while remaining disconnected.
 - **Boundary tests are the default.** Most tests should be at system boundaries (server-side integration tests through the real runtime, client-side route/page tests with only the network edge mocked). Internal modules (stores, hooks, services) get covered transitively. If the issue's test plan names internal classes or modules directly (e.g., "StageRunner emits events"), reframe them as boundary tests (e.g., "POST /api/runs → events appear on SSE endpoint").

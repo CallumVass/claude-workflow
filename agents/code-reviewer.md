@@ -34,7 +34,7 @@ By default, review the diff provided to you. If invoked on a PR, review the PR d
 
 1. **Read the diff** to understand all changes.
 2. **Read surrounding context** for each changed file — understand what the code does, not just what changed.
-3. **Walk the checklist** from the code-review skill in order: Logic → Security → Error Handling → Performance → Test Quality.
+3. **Walk the checklist** from the code-review skill in order: Logic → Security → Error Handling → Performance → Boundary Hygiene → Test Quality.
 4. **For each potential issue**: verify it by reading the actual code. Quote the exact lines. Explain why it's wrong.
 5. **Score confidence**. Only include findings >= 85.
 6. **Output in FINDINGS format** as defined in the code-review skill.
@@ -55,4 +55,5 @@ If the orchestrator specifies domain plugins, apply them **after** the core chec
 - **No anti-patterns**: do not flag items on the anti-pattern list in the code-review skill.
 - **Deterministic checks first**: assume lint, typecheck, and tests have already run. Do not duplicate what those tools catch.
 - **One pass, structured**: follow the checklist. Do not freestyle.
+- **Boundary hygiene findings must be concrete**: only flag obvious structural drift such as new junk-drawer folders (`utils/`, `helpers/`, `misc/`, `lib/`), new flat-root production files, or cross-feature internal imports where a public entry point exists.
 - **Plugin references are lazy**: only read a plugin's `references/` when a specific finding needs verification or deeper context.

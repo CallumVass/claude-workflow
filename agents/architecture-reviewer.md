@@ -37,12 +37,17 @@ When asked to explore, organically navigate the codebase. Don't follow a rigid c
 - **Duplicated abstractions**: Same concept modeled differently in different places (e.g., two "User" types, two error-handling patterns).
 - **Missing boundaries**: Business logic mixed with infrastructure, UI mixed with data access, configuration scattered across modules.
 - **Leaky abstractions**: Internal details (private types, implementation constants) exposed through public interfaces.
+- **Flat-root sprawl**: Too many unrelated production files sitting in one package root or one folder instead of feature or domain boundaries.
+- **Boundaryless growth**: New capabilities added beside each other rather than inside a single owning feature folder.
+- **Junk-drawer accumulation**: `utils`, `helpers`, `misc`, or `lib` folders collecting unrelated concepts.
+- **Cross-feature leakage**: One feature imports another feature's internals instead of going through a small public entry point.
 
 ### How to Investigate
 
 Use concrete data, not vibes:
 - `wc -l` to find large files
 - `grep -r "import.*from" --include="*.ts"` (or language equivalent) to map dependency graphs
+- `find` / `ls` to count unrelated files per source folder and spot flat-root sprawl
 - `git log --format='%H' --diff-filter=M -- file1 file2 | head -20` to check co-change frequency
 - Count exports per module to assess interface surface area
 - Check test files: are tests testing internal details instead of behavior? That's a coupling signal.
@@ -83,7 +88,7 @@ When asked to generate an RFC for a specific candidate, create a GitHub issue us
 What's wrong today and why it matters. Include concrete evidence (file paths, line counts, coupling metrics).
 
 ### Proposed Approach
-How to restructure: new module boundaries, what moves where, interface design. Be specific — name files and functions.
+How to restructure: new module boundaries, what moves where, interface design. Be specific — name files and functions. Always name the owning boundary folder and its public entry point.
 
 ### Migration Path
 Step-by-step plan to get there without a big-bang rewrite. Each step should leave the codebase in a working state. Prefer steps that can be individual PRs.
