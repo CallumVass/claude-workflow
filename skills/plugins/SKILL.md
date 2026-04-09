@@ -37,7 +37,7 @@ description: One-line description
 triggers:
   files: ["*.tsx", "*.jsx"]    # Glob patterns for project files
   content: ["useQuery", "cn("] # Literal strings to search for in codebase/diff
-stages: [plan, implement, review, refactor]  # which pipeline stages use this plugin
+stages: [plan, implement, review, refactor, architecture]  # which pipeline stages use this plugin
 ---
 ```
 

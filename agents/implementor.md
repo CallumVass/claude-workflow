@@ -36,7 +36,8 @@ For each behavior to implement:
 
 After all behaviors pass:
 
-4. **Refactor**: Look for duplication, unclear names, or structural improvements. Run tests after each refactor to confirm nothing breaks.
+4. **Reachability check (GATE)**: Before you touch anything structural, verify every new module, class, function, or top-level symbol you created is reachable from production code — not just from tests. `grep` from the production entry points (route handlers, app render, pipeline modules, public exports) to every new symbol. If any new symbol is only imported by its own test, the feature is NOT done yet: go back to step 2 and wire the integration before refactoring.
+5. **Refactor**: Only now. Look for duplication, unclear names, or structural improvements. Run tests after each refactor to confirm nothing breaks.
 
 ## Test Budget
 
@@ -137,7 +138,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/). Read `git log 
 
 ## Before Committing
 
-- **Reachability check**: Every new module, class, or function you created must be imported and called from production code — not just from tests. If something is only used in tests, it's dead code and the slice is not wired. Trace from the entry point (route handler, app render) to your new code and verify the call chain exists.
+- Re-run the reachability check from TDD step 4 as a final guard: `grep` every new symbol to confirm at least one production consumer exists.
 - Run the full check suite (tests, lint, typecheck).
 - Fix any failures before committing.
 - Do NOT skip or disable failing tests.
